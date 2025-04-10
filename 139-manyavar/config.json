@@ -1,0 +1,8 @@
+{
+    "enterpriseId": "enterprise123",
+    "baseUrl": "https://webhook.site/a38d3c58-05c9-4475-b696-30f9d0f029a6",
+    "authToken": "YOUR_AUTH_TOKEN",
+    "otherSettings": {
+      "enabled": true
+    }
+  }

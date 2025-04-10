@@ -1,0 +1,195 @@
+<%
+let result ={
+    siteId: data.data.ref_store_code, 
+    docNo: data.data.doc_no, 
+    docDate: data.data.created_at, 
+    stockpointId: data.data.ref_stock_point_code, 
+    remarks: data.data.transaction_remark,
+    refNo: "",
+    udfString1: "",
+    udfString2: "",
+    udfString3: "",
+    udfString4: "",
+    udfString5: "",
+    udfString6: "",
+    udfString7: "",
+    udfString8: "",
+    udfString9: "",
+    udfString10: "",
+    udfNum1: 0,
+    udfNum2: 0,
+    udfNum3: 0,
+    udfNum4: 0,
+    udfNum5: 0,
+    udfDate1: null,
+    udfDate2: null,
+    udfDate3: null,
+    udfDate4: null,
+    udfDate5: null,
+    miscItems: 
+    data.data.adjustment_items.map(item=>({
+        itemId: item.ref_sku_code,
+        qty: item.quantity * -1,
+        rate: item.supply_price,
+        batchSerialCode:item?.batch_serial_code ? item?.batch_serial_code:null
+    }))
+    
+  
+}
+%>
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+{
+// Root Level Required
+
+"siteId": data.data.ref_store_code, // Store identifier
+"docNo": data.data.doc_no, // Document number
+"docDate": data.data.created_at, // Document date
+"stockpointId": data.data.ref_stock_point_code, // Stock point code
+
+// Required Item Level
+"miscItems": data.data.adjustment_items.map(item => ({
+"itemId": item.ref_sku_code, // Item/SKU code
+"qty": item.quantity * -1, // Adjustment quantity (negative for reduction)
+"rate": item.supply_price // Item rate/price
+}))
+}
+
+
+
+
+### Optional Keys and Values
+
+{
+// Root Level Optional
+"remarks": data.data.transaction_remark || "", // Comments
+"refNo": "", // Reference number
+"udfString1": "", // User defined string fields
+"udfString2": "",
+"udfString3": "",
+"udfString4": "",
+"udfString5": "",
+"udfString6": "",
+"udfString7": "",
+"udfString8": "",
+"udfString9": "",
+"udfString10": "",
+"udfNum1": 0, // User defined numeric fields
+"udfNum2": 0,
+"udfNum3": 0,
+"udfNum4": 0,
+"udfNum5": 0,
+"udfDate1": null, // User defined date fields
+"udfDate2": null,
+"udfDate3": null,
+"udfDate4": null,
+"udfDate5": null,
+
+// Optional Item Level
+"miscItems": [
+{
+"batchSerialCode": item?.batch_serial_code || null // Batch/Serial number
+}
+]
+}
+
+
+
+
+Data Types:
+
+1. Required Fields:
+
+siteId: String
+docNo: String
+docDate: DateTime String
+stockpointId: String
+Item Level:
+itemId: String
+qty: Number
+rate: Number
+
+2. Optional Fields:
+
+remarks: String
+refNo: String
+udfString1-10: String
+udfNum1-5: Number
+udfDate1-5: Date or null
+Item Level:
+batchSerialCode: String or null
+
+
+
+
+### Complete Example:
+
+let result = {
+// Required Fields
+siteId: data.data.ref_store_code,
+docNo: data.data.doc_no,
+docDate: data.data.created_at,
+stockpointId: data.data.ref_stock_point_code,
+
+// Optional Fields
+remarks: data.data.transaction_remark || "",
+refNo: "",
+udfString1: "",
+udfString2: "",
+udfString3: "",
+udfString4: "",
+udfString5: "",
+udfString6: "",
+udfString7: "",
+udfString8: "",
+udfString9: "",
+udfString10: "",
+udfNum1: 0,
+udfNum2: 0,
+udfNum3: 0,
+udfNum4: 0,
+udfNum5: 0,
+udfDate1: null,
+udfDate2: null,
+udfDate3: null,
+udfDate4: null,
+udfDate5: null,
+
+// Items Array
+miscItems: data.data.adjustment_items.map(item => ({
+itemId: item.ref_sku_code,
+qty: item.quantity * -1,
+rate: item.supply_price,
+batchSerialCode: item?.batch_serial_code || null
+}))
+}
+
+
+
+
+
+### Source to Target Key Mapping
+
+// Required Source Keys -> Target Keys
+{
+"ref_store_code" -> "siteId"
+"doc_no" -> "docNo"
+"created_at" -> "docDate"
+"ref_stock_point_code" -> "stockpointId"
+
+// For each item in adjustment_items:
+"ref_sku_code" -> "itemId"
+"quantity" -> "qty" (with multiplication by -1)
+"supply_price" -> "rate"
+}
+
+// Optional Source Keys -> Target Keys
+{
+"transaction_remark" -> "remarks"
+"batch_serial_code" -> "batchSerialCode"
+}

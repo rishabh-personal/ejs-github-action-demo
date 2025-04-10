@@ -1,0 +1,260 @@
+<% 
+let result={
+    storeCode: data.data.ref_store_code, 
+    grtNo: data.data.doc_id, 
+    grtNoSequence: data.data.grt_no_sequence, 
+    intgRefId: data.data.id.toString(),
+    grtDate: data.data.created_at, 
+    replenishmentSourceCode: data.data.destination_location_code, 
+    reason: "", 
+    remarks: data.data.remarks, 
+    udfString1: "", 
+    udfString2: "", 
+    udfString3: "", 
+    udfString4: "", 
+    udfString5: "", 
+    udfString6: "", 
+    udfString7: "", 
+    udfString8: "", 
+    udfString9: "", 
+    udfString10: "", 
+    udfNum1: "0",
+    udfNum2: "0",
+    udfNum3: "0",
+    udfNum4: "0",
+    udfNum5: "0",
+    udfDate1: data.data.created_at,
+    udfDate2: data.data.created_at,
+    udfDate3: data.data.created_at,
+    udfDate4: data.data.created_at,
+    udfDate5: data.data.created_at,
+    
+    items: [],
+    
+}
+%>
+<%
+data.data.goods_transfer_items.forEach((element) => {
+    const quantity = parseInt(element.quantity) || 0;
+    const taxableAmount = parseFloat(element.taxable_amount) || 0;
+    const taxdata = element.tax_details ? element.tax_details : {};
+    const rate = quantity > 0 ? (taxableAmount / quantity).toFixed(3) : "0.000";
+
+    const igstRate = taxdata.IGST_amt ? taxdata.IGST : "0";
+    const igstAmount = taxdata.IGST_amt || "0";
+
+    const cgstRate = taxdata.CGST && taxdata.cgstamt ? taxdata.CGST : "0";
+    const cgstAmount = taxdata.cgstamt || "0";
+
+    const sgstRate = taxdata.SGST && taxdata.SGST_amt ? taxdata.SGST : "0";
+    const sgstAmount = taxdata.SGST_amt || "0";
+
+    const cessRate = taxdata.CESS && taxdata.CESS_AMT ? taxdata.CESS : "0";
+    const cessAmount = taxdata.CESS_AMT || "0";
+        result.items.push ({
+        intgRefDetId: element.id.toString(),
+        intgPacketRefId: element.packet_id,
+        intgPacketRefDetId: element.packet_detail_id ? element.packet_detail_id.toString() : "-1",
+        remarks:  data.data.remarks,
+
+        taxableAmount: taxableAmount || "0",
+
+        rate: rate,
+        igstRate: igstRate,
+        igstAmount: igstAmount,
+        cgstRate: cgstRate,
+        cgstAmount: cgstAmount,
+        sgstRate: sgstRate,
+        sgstAmount: sgstAmount,
+        cessRate: cessRate,
+        cessAmount: cessAmount
+        });
+    })
+%>
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Keys and Values
+
+{
+// Root Level Required
+"storeCode": data.data.ref_store_code, // Store identifier
+"grtNo": data.data.doc_id, // GRT document number
+"grtNoSequence": data.data.grt_no_sequence, // GRT sequence number
+"intgRefId": data.data.id.toString(), // Integration reference ID
+"grtDate": data.data.created_at, // GRT creation date
+"replenishmentSourceCode": data.data.destination_location_code, // Source location
+
+// Required Item Level
+"items": [
+{
+"intgRefDetId": element.id.toString(), // Item reference ID
+"intgPacketRefId": element.packet_id, // Packet reference ID
+"intgPacketRefDetId": element.packet_detail_id ?
+element.packet_detail_id.toString() : "-1", // Packet detail ID
+"taxableAmount": element.taxable_amount || "0", // Taxable amount
+"rate": rate, // Calculated rate
+"igstRate": igstRate, // IGST rate
+"igstAmount": igstAmount, // IGST amount
+"cgstRate": cgstRate, // CGST rate
+"cgstAmount": cgstAmount, // CGST amount
+"sgstRate": sgstRate, // SGST rate
+"sgstAmount": sgstAmount // SGST amount
+}
+]
+}
+
+
+
+
+
+### Optional Keys and Values
+
+{
+// Root Level Optional
+"reason": "", // Reason for transfer
+"remarks": data.data.remarks, // Additional remarks
+"udfString1": "", // User defined string field 1
+"udfString2": "", // User defined string field 2
+"udfString3": "", // User defined string field 3
+"udfString4": "", // User defined string field 4
+"udfString5": "", // User defined string field 5
+"udfString6": "", // User defined string field 6
+"udfString7": "", // User defined string field 7
+"udfString8": "", // User defined string field 8
+"udfString9": "", // User defined string field 9
+"udfString10": "", // User defined string field 10
+"udfNum1": "0", // User defined number field 1
+"udfNum2": "0", // User defined number field 2
+"udfNum3": "0", // User defined number field 3
+"udfNum4": "0", // User defined number field 4
+"udfNum5": "0", // User defined number field 5
+"udfDate1": data.data.created_at, // User defined date field 1
+"udfDate2": data.data.created_at, // User defined date field 2
+"udfDate3": data.data.created_at, // User defined date field 3
+"udfDate4": data.data.created_at, // User defined date field 4
+"udfDate5": data.data.created_at, // User defined date field 5
+
+// Optional Item Level
+"items": [
+{
+"remarks": data.data.remarks, // Item level remarks
+"cessRate": cessRate, // CESS rate
+"cessAmount": cessAmount // CESS amount
+}
+]
+}
+
+
+
+
+
+Data Types:
+
+
+Required Fields:
+
+storeCode: String
+grtNo: String
+grtNoSequence: String
+intgRefId: String
+grtDate: DateTime String
+replenishmentSourceCode: String
+Item Level:
+intgRefDetId: String
+intgPacketRefId: String
+intgPacketRefDetId: String
+taxableAmount: String (numeric)
+rate: String (decimal)
+igstRate: String (numeric)
+igstAmount: String (numeric)
+cgstRate: String (numeric)
+cgstAmount: String (numeric)
+sgstRate: String (numeric)
+sgstAmount: String (numeric)
+
+Optional Fields:
+All udfString1-10: String
+All udfNum1-5: String (numeric)
+All udfDate1-5: DateTime String
+reason: String
+remarks: String
+Item Level:
+remarks: String
+cessRate: String (numeric)
+cessAmount: String (numeric)
+
+
+
+
+
+### Required Key Mapping
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.ref_store_code" -> "storeCode"
+"data.data.doc_id" -> "grtNo"
+"data.data.grt_no_sequence" -> "grtNoSequence"
+"data.data.id.toString()" -> "intgRefId"
+"data.data.created_at" -> "grtDate"
+"data.data.destination_location_code" -> "replenishmentSourceCode"
+}
+
+// ITEM LEVEL REQUIRED
+{
+"element.id.toString()" -> "intgRefDetId"
+"element.packet_id" -> "intgPacketRefId"
+"element.packet_detail_id.toString()" -> "intgPacketRefDetId"
+"element.taxable_amount" -> "taxableAmount"
+"rate" -> "rate" // Calculated
+"igstRate" -> "igstRate" // From tax_details
+"igstAmount" -> "igstAmount" // From tax_details
+"cgstRate" -> "cgstRate" // From tax_details
+"cgstAmount" -> "cgstAmount" // From tax_details
+"sgstRate" -> "sgstRate" // From tax_details
+"sgstAmount" -> "sgstAmount" // From tax_details
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"" -> "reason" // Empty string
+"data.data.remarks" -> "remarks"
+"" -> "udfString1" // Empty string
+"" -> "udfString2" // Empty string
+"" -> "udfString3" // Empty string
+"" -> "udfString4" // Empty string
+"" -> "udfString5" // Empty string
+"" -> "udfString6" // Empty string
+"" -> "udfString7" // Empty string
+"" -> "udfString8" // Empty string
+"" -> "udfString9" // Empty string
+"" -> "udfString10" // Empty string
+"0" -> "udfNum1" // String "0"
+"0" -> "udfNum2" // String "0"
+"0" -> "udfNum3" // String "0"
+"0" -> "udfNum4" // String "0"
+"0" -> "udfNum5" // String "0"
+"data.data.created_at" -> "udfDate1"
+"data.data.created_at" -> "udfDate2"
+"data.data.created_at" -> "udfDate3"
+"data.data.created_at" -> "udfDate4"
+"data.data.created_at" -> "udfDate5"
+}
+
+// ITEM LEVEL OPTIONAL
+{
+"data.data.remarks" -> "remarks"
+"cessRate" -> "cessRate" // From tax_details
+"cessAmount" -> "cessAmount" // From tax_details
+}

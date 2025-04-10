@@ -1,0 +1,97 @@
+<%
+let result = {
+    "referencecNo": data.data.plan_code,  
+    "storeId": data.data.ref_store_code, 
+    "journalName": "plan_description", 
+    "planName": data.data.plan_name, 
+    "bookStockDate": data.data.activation_date, 
+    "auditStartDate": data.data.activation_date, 
+    "auditEndDate": data.data.completion_date, 
+    "remarks": '',
+    "postStock": data.data.is_reconciliation_allowed, 
+    "stockAuditItems": [
+    data.data.stock_audit_items.map(item=>({
+        "stockpointId": item.ref_stock_point_code, 
+        "itemId": item.ref_sku_code, 
+        "division": item.item_details.cat_1,
+        "section": item.item_details.cat_2,
+        "department": item.item_details.cat_3,
+        "bookQty": item.available_qty, 
+        "physicalQty": item.actual_qty, 
+        "differenceQty": item.difference_qty * -1, 
+        "rate": item.supply_price,
+        "mrp": item.mrp,
+        "rsp": item.rsp
+    }))
+    ]
+   
+}
+
+
+%>
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.plan_code" -> "referenceNo"
+"data.data.ref_store_code" -> "storeId"
+"plan_description" -> "journalName" // Fixed value
+"data.data.plan_name" -> "planName"
+"data.data.activation_date" -> "bookStockDate"
+"data.data.activation_date" -> "auditStartDate"
+"data.data.completion_date" -> "auditEndDate"
+"data.data.is_reconciliation_allowed" -> "postStock"
+}
+
+// ITEM LEVEL REQUIRED (stockAuditItems array)
+{
+"item.ref_stock_point_code" -> "stockpointId"
+"item.ref_sku_code" -> "itemId"
+"item.item_details.cat_1" -> "division"
+"item.item_details.cat_2" -> "section"
+"item.item_details.cat_3" -> "department"
+"item.available_qty" -> "bookQty"
+"item.actual_qty" -> "physicalQty"
+"item.difference_qty * -1" -> "differenceQty"
+"item.supply_price" -> "rate"
+"item.mrp" -> "mrp"
+"item.rsp" -> "rsp"
+}
+
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.plan_code" -> "referenceNo"
+"data.data.ref_store_code" -> "storeId"
+"plan_description" -> "journalName" // Fixed value
+"data.data.plan_name" -> "planName"
+"data.data.activation_date" -> "bookStockDate"
+"data.data.activation_date" -> "auditStartDate"
+"data.data.completion_date" -> "auditEndDate"
+"data.data.is_reconciliation_allowed" -> "postStock"
+}
+
+// ITEM LEVEL REQUIRED (stockAuditItems array)
+{
+"item.ref_stock_point_code" -> "stockpointId"
+"item.ref_sku_code" -> "itemId"
+"item.item_details.cat_1" -> "division"
+"item.item_details.cat_2" -> "section"
+"item.item_details.cat_3" -> "department"
+"item.available_qty" -> "bookQty"
+"item.actual_qty" -> "physicalQty"
+"item.difference_qty * -1" -> "differenceQty"
+"item.supply_price" -> "rate"
+"item.mrp" -> "mrp"
+"item.rsp" -> "rsp"
+}

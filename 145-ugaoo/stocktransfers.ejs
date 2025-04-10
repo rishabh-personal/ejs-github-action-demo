@@ -1,0 +1,124 @@
+<%
+let result = {
+    storeId: data.data.ref_store_code, 
+    docNo: data.data.ref_doc_id, 
+    docDate: data.data.created_at,
+    inStockpointId: data.data.in_stock_point_code, 
+    outStockpointId: data.data.out_stock_point_code,
+    remarks: data.data.remarks || null, 
+    stockPointTransferItem: 
+    data.data.stock_point_transfer_items.map(item=>(
+    {
+        itemId: item.ref_sku_code, 
+        qty: item.quantity, 
+        batchSerialCode:item?.batch_serial_code? item.batch_serial_code:null
+    }
+    ))
+    ,
+
+  };
+ 
+
+%>
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Keys and Values
+
+{
+// Root Level Required
+"storeId": data.data.ref_store_code, // Store identifier
+"docNo": data.data.ref_doc_id, // Document number
+"docDate": data.data.created_at, // Document date
+"inStockpointId": data.data.in_stock_point_code, // Receiving stockpoint
+"outStockpointId": data.data.out_stock_point_code, // Sending stockpoint
+
+// Required Item Level
+"stockPointTransferItem": [
+{
+"itemId": item.ref_sku_code, // Item/SKU code
+"qty": item.quantity // Transfer quantity
+}
+]
+}
+
+
+
+
+
+### Optional Keys and Values
+
+{
+// Root Level Optional
+"remarks": data.data.remarks || "", // Additional comments
+
+// Optional Item Level
+"stockPointTransferItem": [
+{
+"batchSerialCode": item?.batch_serial_code || null // Batch or serial number
+}
+]
+}
+
+
+
+Data Types:
+
+Required Fields:
+
+storeId: String
+docNo: String
+docDate: DateTime String
+inStockpointId: String
+outStockpointId: String
+Item Level:
+itemId: String
+qty: Number
+
+Optional Fields:
+
+remarks: String
+Item Level:
+batchSerialCode: String or null
+
+
+
+
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.ref_store_code" -> "storeId"
+"data.data.ref_doc_id" -> "docNo"
+"data.data.created_at" -> "docDate"
+"data.data.in_stock_point_code" -> "inStockpointId"
+"data.data.out_stock_point_code" -> "outStockpointId"
+}
+
+// ITEM LEVEL REQUIRED (stockPointTransferItem array)
+{
+"item.ref_sku_code" -> "itemId"
+"item.quantity" -> "qty"
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.remarks" -> "remarks" // Default: null
+}
+
+// ITEM LEVEL OPTIONAL
+{
+"item.batch_serial_code" -> "batchSerialCode" // Default: null
+}
