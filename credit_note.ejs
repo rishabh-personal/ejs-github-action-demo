@@ -1,0 +1,73 @@
+<%
+let result={
+    intgRefid: data.data.doc_id.toString(), 
+    posJournalNo: data.data.doc_no, 
+    posJournalDate: `${new Date(data.data.created_at).toISOString()}`, 
+    transactionSiteCode: data.data.ref_store_code, 
+    remarks: data.data.remarks,
+    collectionDetails:data.data.mop_details.map(item=>({
+        tenderId: parseInt(item.ref_mop_code), 
+        amount: item.mop_amount, 
+        remarks: "",
+        refNo: item.mop_transaction_id, 
+        refDateTime: `${new Date(item.created_at).toISOString()}`,
+        additionalDetails1: "",
+        additionalDetails2: "",
+        additionalDetails3: "",
+        additionalDetails4: ""
+    }))
+}
+
+%>
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+<%
+let result={
+    intgRefid: data.data.doc_id.toString(), 
+    posJournalNo: data.data.doc_no, 
+    posJournalDate: data.data.created_at, 
+    transactionSiteCode: data.data.ref_store_code, 
+    remarks: data.data.remarks,
+    collectionDetails:[data.data.mop_details.map(item=>({
+        tenderId: parseInt(item.ref_mop_code), 
+        amount: item.mop_amount, 
+        remarks: "",
+        refNo: item.mop_transaction_id, 
+        refDateTime: item.created_at,
+        additionalDetails1: "",
+        additionalDetails2: "",
+        additionalDetails3: "",
+        additionalDetails4: ""
+    }))]
+}
+
+%>
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Key Assignments
+
+// ROOT LEVEL
+{
+// Source Key -> Target Key
+"ref_store_code" -> "siteId" // Store code (e.g., "1001")
+"store_active_date" -> "openingDate" // Date (e.g., "2024-01-19")
+"ref_stock_point_code" -> "stockpointId" // Stock point (e.g., "SP001")
+}
+
+// ITEM LEVEL (opening_stock_items array)
+{
+// Source Key -> Target Key
+"ref_sku_code" -> "itemId" // SKU code (e.g., "SKU001")
+"quantity" -> "quantity" // Number (e.g., 100)
+"supply_price" -> "rate" // Decimal (e.g., "10.500")
+}

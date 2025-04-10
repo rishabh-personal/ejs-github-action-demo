@@ -1,0 +1,1518 @@
+<% 
+let result={
+    v_id:data.data.v_id,
+    transactionSiteCode: data.data.ref_store_code,
+    invoiceType: 'NEW', 
+    channelType: 'RTL', 
+    channelCode:data.data.channel_code?data.data.channelCode:null,
+    tradeGroup: data.data.trade_boundary, 
+    intgInvoiceId: String(data.data.invoice_id), 
+    parentIntgInvoiceId: null,
+    parentIntgInvoiceNo: data.data.ref_doc_id,
+    intgDocSchemeCode: '0',
+    salesStockPointid:data.data.transaction_type != 'return' ? data.data.stock_point_code ? data.data.stock_point_code:null:null,
+    returnStockPointid:data.data.transaction_type == 'return'? data.data.stock_point_code ? data.data.stock_point_code:null:null,
+    damageStockPointid: null, 
+    parenIntgInvoiceDate: null, 
+    channelInvoiceNo:data.data.doc_no,
+    channelInvoiceDate:data.data.created_at ? data.data.created_at.replace('Z', '+05:30'): '',
+    remarks: data.data.remark,
+    eInvoiceAppl: false, 
+    valueDetails: {
+          invoiceValue:
+            data.data.transaction_type != "return" ? data.data.net_amount : data.data.net_amount * -1,
+          invoiceRoundOff: data.data.round_off && data.data.round_off !== "" ? data.data.transaction_type !== "return" ? data.data.round_off : data.data.round_off * -1 : 0,
+          
+          invoicePayableAmount:
+           data.data.transaction_type != "return" ? data.data.total : data.data.total * -1,
+          codAmount: 0,
+        },
+    deliveryDetails: {
+        billToShipToSame: true, 
+        transporterId: null, 
+        createCustomer: false,
+        billingCustomerDetail: {
+          firstName:  !data.data.customer_details.billing_details.first_name ? '':data.data.customer_details.billing_details.first_name, 
+          middleName: null,
+
+          lastName:!data.data.customer_details.billing_details.last_name ? '': data.data.customer_details.billing_details.last_name, 
+
+          salutation: !data.data.customer_details.billing_details.salutation  ?   '':data.data.customer_details.billing_details.salutation ,
+    
+         gender: !data.data.customer_details.billing_details.gender   ? '': data.data.customer_details.billing_details.gender.toLowerCase() == 'male' ? 'M' : 'F'  , 
+        
+         remarks: !data.data.customer_details.billing_details.mobile_no  ? '':data.data.customer_details.billing_details.mobile_no.toString() ,
+        
+        profession: !data.data.customer_details.billing_details.profession ? '' : data.data.customer_details.billing_details.profession  ,
+        
+        spouseName:  !data.data.customer_details.billing_details.spouseName   ? ''  : data.data.customer_details.billing_details.spouseName,
+         
+         dateOfBirth: !data.data.customer_details.billing_details.dob && data.data.customer_details.billing_details.dob != '0000-00-00' ?   null:data.data.customer_details.billing_details.dob, 
+          
+
+          isEmployee: false,
+         
+          isdCode: !data.data.customer_details.billing_details.country_code  ? '': data.data.customer_details.billing_details.country_code ,
+        
+          mobileNumber: !data.data.customer_details.billing_details.mobile_no  ?'': data.data.customer_details.billing_details.mobile_no.length == 10 ? data.data.customer_details.billing_details.mobile_no : '' ,
+  
+         email: !data.data.customer_details.billing_details.email  ?'': data.data.customer_details.billing_details.email,
+    
+    panNumber: !data.data.customer_details.billing_details.panNumber  ? '': data.data.customer_details.billing_details.panNumber ,
+    
+    gstIdentificationNumber: !data.data.customer_details.billing_details.gstIdentificationNumber ?'': data.data.customer_details.billing_details.gstIdentificationNumber ,
+    
+    gstStateCode: data.data.trade_type == 'B2C' ? data.data.fulfillment_mode == 'delivery' ? data.data.customer_details.billing_details.tax_registration_state_code : data.data.store_state_code : data.data.trade_type == 'B2B' ? data.data.customer_details.billing_details.tax_registration_state_code : '200',
+    addressDetails: {
+      addressLine1: !data.data.customer_details.billing_details.addressDetails.addressLine1 ? '': data.data.customer_details.billing_details.addressDetails.addressLine1 ,
+        addressLine2: !data.data.customer_details.billing_details.addressDetails.addressLine2  ?'': data.data.customer_details.billing_details.addressDetails.addressLine2 ,
+      addressLine3: !data.data.customer_details.billing_details.addressDetails.addressLine3  ?'': data.data.customer_details.billing_details.addressDetails.addressLine3 ,
+      city: !data.data.customer_details.billing_details.addressDetails.city  ?'': data.data.customer_details.billing_details.addressDetails.city ,
+      state: !data.data.customer_details.billing_details.addressDetails.state  ?'': data.data.customer_details.billing_details.addressDetails.state ,
+      country: !data.data.customer_details.billing_details.addressDetails.country  ?'': data.data.customer_details.billing_details.addressDetails.country ,
+      postalCode: !data.data.customer_details.billing_details.addressDetails.postalCode?'': data.data.customer_details.billing_details.addressDetails.postalCode ,
+    }
+
+        },
+        
+        itemDetails: [],
+      },
+    
+    
+    tenderDetails:[]
+}
+%>
+
+
+
+
+<% 
+const summary = data.data.tenderDetails.reduce((acc, transaction) => {
+    const tenderId = transaction.tenderId;
+    const amount = parseFloat(transaction.amount);
+    if (acc[tenderId]) {
+        acc[tenderId].amount += amount;
+    } else {
+        acc[tenderId] = { 
+            tenderId: tenderId, 
+            amount: amount,
+            remarks: transaction.remarks, 
+            refNo: transaction.refNo,     
+            refDateTime: transaction.refDateTime, 
+            additionalDetails1: transaction.additionalDetails1, 
+            additionalDetails2: transaction.additionalDetails2, 
+            additionalDetails3: transaction.additionalDetails3, 
+            additionalDetails4: transaction.additionalDetails4  
+        };
+    }
+    return acc;
+}, {});
+
+
+result.tenderDetails = Object.values(summary).map(item => ({
+    tenderId: item.tenderId,
+    amount: item.amount.toFixed(2), // Format to 2 decimal places
+    remarks: item.remarks,
+    refNo: item.refNo,
+    refDateTime: item.refDateTime,
+    additionalDetails1: item.additionalDetails1,
+    additionalDetails2: item.additionalDetails2,
+    additionalDetails3: item.additionalDetails3,
+    additionalDetails4: item.additionalDetails4
+}));
+%>
+
+<% 
+data.data.invoice_items.forEach((item) => {
+    const taxDetails = item.tax_details || {};
+    
+    
+    const taxRateCal = [
+        taxDetails.CGST,
+        taxDetails.IGST,
+        taxDetails.CESS,
+        taxDetails.SGST,
+    ].reduce((acc, rate) => parseFloat(acc) + (parseFloat(rate) ? parseFloat(rate) : 0), 0);
+
+    const transactionMultiplier = data.data.transaction_type === 'return' ? -1 : 1;
+
+    let itemDetailsTemp = {
+        itemCode: item.ref_sku_code,
+        isDamageItem: false,
+        intgInvoiceDetId: item.intgInvoiceDetId.toString(),
+        parentIntgInvoiceDetId: null,
+        hsnSacCode: item.hsn_code?.toString() || '',
+        remarks: item.remarks || '',
+        invoiceQuantity: (item.quantity || 0) * transactionMultiplier,
+        itemRate: item.csp || 0,
+        grossAmount: (item.gross_amount || 0) * transactionMultiplier,
+        netAmount: (item.total || 0) * transactionMultiplier,
+        itemTaxDetails: {
+            taxRegime: 'G',
+            taxableAmount: parseFloat(item.tax_details.taxable).toFixed(2) * transactionMultiplier,
+            taxRate: taxRateCal,
+            taxAmount: parseFloat(item.tax_details.tax).toFixed(2) * transactionMultiplier,
+            cgstRate: parseFloat(taxDetails.CGST || 0).toFixed(3),
+            sgstRate: parseFloat(taxDetails.SGST || 0).toFixed(3),
+            igstRate: parseFloat(taxDetails.IGST || 0).toFixed(3),
+            cessRate: parseFloat(taxDetails.CESS || 0).toFixed(3),
+            taxDescription: taxDetails.tax_name,
+            isDynamicTaxApplicable: false,
+            cgstAmount: (taxDetails.cgstamt || 0) * transactionMultiplier,
+            sgstAmount: (taxDetails.sgstamt || 0) * transactionMultiplier,
+            igstAmount: (taxDetails.igstamt || 0) * transactionMultiplier,
+            cessAmount: (taxDetails.cessamt || 0) * transactionMultiplier,
+        },
+        applicableCharges: {
+            itemDiscount: (item.discount_amount || 0) * transactionMultiplier,
+            codCharge: 0,
+            giftWrapCharge: 0,
+            shippingCharge: 0,
+            otherCharges: 0,
+        },
+        discountBreakUp: {
+                   ...item.discountBreakUp
+              },
+        batchSerialNo:item?.batch_serial_code?item?.batch_serial_code:null,
+    };
+
+    
+    if (item.promo_details) {
+        itemDetailsTemp.promoDetails = item.promo_details.map(pdetails => {
+            const start_date = moment.utc(pdetails.start_date).local().format();
+            const end_date = moment.utc(pdetails.end_date).local().format();
+            return {
+                promoCode: pdetails.promo_code,
+                promoNo: pdetails.promo_no,
+                promoName: pdetails.message,
+                promoStartDate: start_date,
+                promoEndDate: end_date,
+                promoAmt: pdetails.amount,
+            };
+        });
+    }
+
+    
+    if (data.data.transaction_type == 'return') {
+        Object.keys(item.discountBreakUp).forEach(key => {
+            item.discountBreakUp[key] *= -1;
+        });
+        itemDetailsTemp.discountBreakUp={ ...item.discountBreakUp }
+    }
+ 
+    result.deliveryDetails.itemDetails.push(itemDetailsTemp);
+});
+
+%>
+
+
+<%- JSON.stringify(result, null, 2) %>
+
+
+
+
+
+{
+// Core Invoice Details
+v_id: number,
+invoice_id: string,
+store_id: string,
+terminal_id: string,
+status: string, // 'Success' or 'Void'
+transaction_type: string,
+comm_trans: string, // Trade type (B2C etc)
+fulfillment_mode: string,
+subtotal: number,
+discount: number,
+total: number,
+net_amount: number,
+created_at: string,
+updated_at: string,
+date: number | string,
+
+// Customer Details
+cust_billing_details: {
+firstName: string,
+address?: {
+addressLine?: string,
+city?: string,
+state?: string,
+country?: string,
+pincode?: number
+}
+},
+cust_mobile: string,
+cust_email: string,
+
+// Store Details
+store_gstin_state_id: number,
+
+// Reference IDs
+ref_order_id: string,
+stock_point_id: string,
+vu_id: string,
+id: number
+}
+
+
+
+
+
+{
+// Invoice Optional Fields
+is_einvoice: boolean,
+extra_charge: number,
+round_off: number,
+remark: string,
+
+// Customer Optional Fields
+cust_gstin: string,
+cust_billing_details: {
+lastName?: string,
+gender?: string,
+dob?: string,
+dateOfBirth?: string,
+address?: {
+tin?: string
+}
+},
+
+// UDF (User Defined Fields)
+udf: any,
+
+// Transaction Details
+transaction_id: string
+}
+
+
+
+
+
+/* eslint-disable complexity */
+import { Injectable, Scope } from '@nestjs/common';
+import moment from 'moment';
+import { EventType } from '../../constant/constant';
+import { InvoiceDto } from '../../dto/invoice.dto';
+import { SourceDto } from '../../dto/source.dto';
+import { IOutboundEventLogs } from '../../interface/IOutboundEventLogs.interface';
+import { EventSubscriberRepository } from '../../repositories/eventsubscriber.repository';
+import { GenericEventRepository } from '../../repositories/genericevent.repository';
+import { InvoiceRepository } from '../../repositories/mysql/invoice';
+import { InvoiceDetailsRepository } from '../../repositories/mysql/invoice_details.repository';
+import { InvoiceLogsRepository } from '../../repositories/mysql/invoice_logs.repository';
+import { OutboundEventLogRepository } from '../../repositories/outboundeventlog.repository';
+import { convertInt32ToDate, getVid } from '../../utils/utils';
+import { BatchService } from '../batch/batch.service';
+import { CashregistersService } from '../cashregisters/cashregisters.service';
+import { ClientStateMappingService } from '../clientstatemapping/clientstatemapping.service';
+import { InvoiceChargesService } from '../invoicecharges/invoicecharges.service';
+import { MetaDataService } from '../meta-data/meta-data.service';
+import { MopsService } from '../mops/mops.service';
+import { OrderService } from '../order/order.service';
+import { PaymentsService } from '../payments/payments.service';
+import { SerialService } from '../serial/serial.service';
+import { SkuService } from '../sku/sku.service';
+import { StockPointService } from '../stockpoint/stockpoint.service';
+import { StoresService } from '../stores/stores.service';
+import { VendorAuthService } from '../vendorauth/vendorauth.service';
+import { Dispatch } from '@libs/intent/queue';
+import { GenericEventLogsRepository } from '../../repositories/genericeventlogs.repository';
+
+@Injectable({ scope: Scope.REQUEST, durable: true })
+export class InvoiceService {
+constructor(
+private invoiceRepo: InvoiceRepository,
+private genericEvnetRepository: GenericEventRepository,
+private eventSubscriberRepository: EventSubscriberRepository,
+private outboundEventLogRepo: OutboundEventLogRepository,
+private orderService: OrderService,
+private stockService: StockPointService,
+private cashregistersService: CashregistersService,
+private storeService: StoresService,
+private paymentsService: PaymentsService,
+private invoiceChargesService: InvoiceChargesService,
+private vendorAuthService: VendorAuthService,
+private clientStateMappingService: ClientStateMappingService,
+
+private mopsService: MopsService,
+private skuService: SkuService,
+private metaDataService: MetaDataService,
+private batchService: BatchService,
+private serialService: SerialService,
+private invoiceDetailsRepository: InvoiceDetailsRepository,
+private invoiceLogsRepository: InvoiceLogsRepository,
+private genericEventLogsRepository: GenericEventLogsRepository
+) { }
+
+async processdata(
+invoiceData: InvoiceDto,
+source: SourceDto,
+isForWay = false,
+) {
+try {
+invoiceData.cust_billing_details = JSON.parse(
+invoiceData.cust_billing_details,
+);
+
+const v_id = getVid(invoiceData.v_id, source.db);
+
+if (invoiceData.status == 'Success' || invoiceData.status == 'Void') {
+const event_name =
+invoiceData.status == 'Success'
+? 'Invoice-Master'
+: 'Invoice-Void-Master';
+const subscriberList: any =
+await this.genericEvnetRepository.getGenericEvent(
+{ event_name: event_name, status: 'Active' },
+{ event_code: 1, event_name: 1, event_category: 1, retry_count: 1 },
+);
+const active_subscribers_List =
+await this.eventSubscriberRepository.getDistinctBy(
+'Partner_identifier',
+{
+v_id: v_id,
+event_code: { $in: [subscriberList['data'][0].event_code] },
+},
+);
+let updatedData = { meta_data: {}, data: {} };
+let eventLogObj: IOutboundEventLogs;
+if (!isForWay) {
+eventLogObj = <IOutboundEventLogs>{
+  v_id: +v_id,
+  // event_name: event_name,
+  // event_type: EventType.find(o => o.op === source.op)['type'],
+  // doc_number: invoiceData.invoice_id,
+  // event_status: "Created",
+  // // error: "",
+  // // active_subscribers: active_subscribers_List.length, //it's hard code now we need to make it dynamic
+  // // active_subscribers_List: active_subscribers_List,
+  // transaction_id: source.ts_ms,
+  // // req: '',
+  request_data: {},
+  };
+  // let genericData = await this.invoiceGenericHandler(invoiceData);
+  const meta_data = await this.metaDataService.getMetaData(
+  invoiceData,
+  source,
+  event_name,
+  );
+  updatedData = {
+  meta_data: {
+  // event_id: subscriberList['data'][0].event_code,
+  // event_name: subscriberList['data'][0].event_name,
+  // event_category: subscriberList['data'][0].event_category,
+  // event_type: EventType.find(o => o.op === source.op)['type'],
+  // event_code: `INVOICE.${EventType.find(o => o.op === source.op)['type']}`,
+  // doc_no: invoiceData.invoice_id,
+  // triggered_at: source.ts_ms,
+  // enterprise_id: v_id,
+  // partner_code: '',
+  // retry_count: 0,
+  // transaction_id: source.ts_ms,
+  // max_retry_count: subscriberList['data'][0].retry_count,
+  ...meta_data,
+  ref_code: invoiceData.invoice_id,
+  active_subscribers: active_subscribers_List,
+  event_name: event_name,
+  },
+  data: {},
+  };
+  }
+
+  const ordersDetails = await this.orderService.getOrderDetails(
+  invoiceData.ref_order_id,
+  );
+  const ref_order_id = ordersDetails.length
+  ? ordersDetails[0]['ref_order_id']
+  : '';
+  const refStockPointCode =
+  await this.stockService.getStockPointHeadderCode(
+  invoiceData.stock_point_id,
+  );
+  const terminalDetails =
+  await this.cashregistersService.getTerminalDetails(
+  invoiceData.terminal_id,
+  );
+  const storeDetails: any = await this.storeService.getStoreCode(
+  invoiceData.store_id,
+  );
+
+  const storeAddDetails = await this.storeService.getStoreDetails(
+  invoiceData.store_id,
+  );
+  const paymentStatus = await this.paymentsService.getPaymentStatus({
+  key: 'invoiceId',
+  value: invoiceData.invoice_id,
+  });
+  const discountDetails: any =
+  await this.invoiceChargesService.getDiscountDetails(invoiceData.id);
+
+  const invoiceDetails =
+  await this.invoiceDetailsRepository.getTaxableAmt(invoiceData.id);
+
+  const cashier_details = await this.vendorAuthService.getCashierDetails(
+  invoiceData.vu_id,
+  );
+  const ref_state_code =
+  await this.clientStateMappingService.getStatRefByStateId(
+  invoiceData.store_gstin_state_id,
+  );
+  const items: any = await this.invoiceDetailsRepository.getInvoiceItem(
+  invoiceData.id,
+  );
+
+  let taxRegistrationStateCode = '';
+  if (invoiceData.comm_trans != 'B2C') {
+  const clientStateDetails: any =
+  await this.clientStateMappingService.getStatRefByGstin(
+  invoiceData.cust_gstin,
+  );
+  if (clientStateDetails) taxRegistrationStateCode = '';
+  if (clientStateDetails.length) {
+  taxRegistrationStateCode = clientStateDetails[0]['ref_state_code'];
+  }
+  }
+
+  const cityDetails = [];
+  const countryDetails = [];
+  const statDetails = [];
+
+  let invoiceLogCnt = 0;
+  if (invoiceData.transaction_type.toLowerCase() == 'sales') {
+  const invoicelogs = await this.invoiceLogsRepository.invoiceLogs(
+  invoiceData.invoice_id,
+  );
+
+  invoiceLogCnt = invoicelogs.length;
+  }
+  const tender: any = await this.mopsService.getMopDetails(
+  invoiceData.invoice_id,
+  invoiceLogCnt,
+  );
+
+  let cust_state_id: any = {
+  state_id: '',
+  };
+  if (invoiceData.cust_gstin != null)
+  cust_state_id =
+  await this.clientStateMappingService.clientStateMappingByCustGstin(
+  invoiceData.cust_gstin,
+  );
+  else if (invoiceData.cust_billing_details.address != undefined)
+  if (
+  invoiceData.fulfillment_mode == 'delivery' &&
+  invoiceData.cust_billing_details.address.tin != undefined
+  ) {
+  cust_state_id = await this.clientStateMappingService.getStateId(
+  invoiceData.cust_billing_details.address.tin,
+  );
+  }
+  if (cust_state_id == undefined)
+  cust_state_id = {
+  state_id: '',
+  };
+
+  // updatedData['data']['vId'] = invoiceData.v_id;
+  updatedData['data']['enterpriseCode'] = v_id;
+  // updatedData['data']['transaction_id'] = source.ts_ms;
+  updatedData['data']['cashRegisterId'] = invoiceData.terminal_id;
+  updatedData['data']['terminalName'] = invoiceData.terminal_id;
+  updatedData['data']['terminalShortCode'] = terminalDetails.length
+  ? terminalDetails[0]['code']
+  : '';
+  updatedData['data']['einvoiceRequired'] = invoiceData.is_einvoice;
+  updatedData['data']['status'] = invoiceData.status;
+  updatedData['data']['storeCode'] = invoiceData.store_id;
+  updatedData['data']['storeId'] = invoiceData.store_id;
+
+  // updatedData['data']['refStoreCode'] = storeDetails
+  // ? storeDetails['store_reference_code']
+  // : '';
+  // updatedData['data']['shortCode'] = storeDetails
+  // ? storeDetails['short_code']
+  // : '';
+  // updatedData['data']['storeShortCode'] = storeDetails
+  // ? storeDetails['short_code']
+  // : '';
+
+  // updatedData['data']['invoice_type'] = invoiceData.transaction_type;
+  updatedData['data']['docId'] = invoiceData.id;
+  updatedData['data']['docNo'] = invoiceData.invoice_id;
+  updatedData['data']['refOrderId'] = invoiceData.ref_order_id;
+  updatedData['data']['refDocId'] =
+  ref_order_id != undefined && ref_order_id != ''
+  ? ref_order_id
+  : invoiceData.ref_order_id;
+  updatedData['data']['channelCode'] = '';
+  // updatedData['data']['channel_type'] = '';
+  updatedData['data']['transactionType'] = invoiceData.transaction_type;
+  updatedData['data']['stockPointCode'] = refStockPointCode.length
+  ? refStockPointCode['0']['ref_stock_point_code']
+  : '';
+  updatedData['data']['tradeType'] = invoiceData.comm_trans;
+
+  updatedData['data']['fulfillmentMode'] = invoiceData.fulfillment_mode;
+
+  updatedData['data']['tradeBoundary'] =
+  cust_state_id.state_id == invoiceData.store_gstin_state_id
+  ? 'LOCAL'
+  : cust_state_id.state_id == '' ||
+  invoiceData.store_gstin_state_id == null
+  ? 'LOCAL'
+  : 'INTER STATE';
+
+  updatedData['data']['tradeBoundary'] =
+  invoiceData.comm_trans == 'B2C' &&
+  invoiceData.fulfillment_mode == 'inStore'
+  ? 'Local'
+  : updatedData['data']['tradeBoundary'];
+
+  updatedData['data']['einvoiceRequired'] = invoiceData.is_einvoice;
+  updatedData['data']['paymentStatus'] = paymentStatus
+  ? paymentStatus['status']
+  : null;
+  updatedData['data']['FulfillmentType'] = paymentStatus
+  ? paymentStatus['payment_type']
+  : '';
+  updatedData['data']['subtotal'] = parseFloat(invoiceData.subtotal);
+  updatedData['data']['discount'] = parseFloat(invoiceData.discount);
+  updatedData['data']['taxableAmount'] = invoiceDetails.length
+  ? invoiceDetails[0]['taxable_amount']
+  : '';
+  updatedData['data']['taxAmount'] = invoiceDetails.length
+  ? invoiceDetails[0]['tax_amount']
+  : '';
+  updatedData['data']['extraChargeAmount'] = invoiceData.extra_charge;
+  updatedData['data']['netAmount'] = invoiceData.net_amount;
+  updatedData['data']['total'] = parseFloat(invoiceData.total);
+  // updatedData['data']['invoice_status'] = '';
+  updatedData['data']['createdAt'] = invoiceData.created_at;
+  updatedData['data']['updatedAt'] = invoiceData.updated_at;
+  updatedData['data']['roundOff'] = invoiceData?.round_off ? invoiceData?.round_off : 0;
+  // updatedData['data']['invoiceId'] = invoiceData.id;
+  updatedData['data']['remark'] = invoiceData.remark;
+  updatedData['data']['cashierDetails'] = cashier_details[0];
+  updatedData['data']['storeStateCode'] = ref_state_code.length
+  ? ref_state_code[0].ref_state_code
+  : '';
+
+  updatedData['data']['customerDetails'] = {
+  billingDetails: {
+  firstName: invoiceData.cust_billing_details.firstName,
+  middleName: '',
+  lastName:
+  invoiceData.cust_billing_details.lastName != undefined
+  ? invoiceData.cust_billing_details.lastName
+  : '',
+  salutation: '',
+  gender:
+  invoiceData.cust_billing_details.gender != undefined
+  ? invoiceData.cust_billing_details.gender
+  : '',
+  remarks: '',
+  profession: '',
+  spouseName: '',
+  dob: invoiceData.cust_billing_details.dob
+  ? invoiceData.cust_billing_details.dateOfBirth
+  : null,
+  dateOfAnniversary: '',
+  isEmployee: '',
+  countryCode: '+91',
+  mobileNo: invoiceData.cust_mobile,
+  email: invoiceData.cust_email,
+  panNumber: '',
+  gstIdentificationNumber: invoiceData.cust_gstin,
+  taxRegistration_state_code: taxRegistrationStateCode,
+  addressDetails: {
+  addressLine1:
+  invoiceData.cust_billing_details.address != undefined
+  ? invoiceData.cust_billing_details.address.addressLine
+  : '',
+  addressLine2: '',
+  addressLine3: '',
+  city: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.city
+  : '',
+  state: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.state
+  : '',
+  country: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.country
+  : '',
+  postalCode: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.pincode != null
+  ? invoiceData.cust_billing_details.address.pincode.toString()
+  : ''
+  : '',
+  },
+  },
+  shippingDetails: {
+  first_name: invoiceData.cust_billing_details.firstName,
+  middleName: '',
+  last_name:
+  invoiceData.cust_billing_details.lastName != undefined
+  ? invoiceData.cust_billing_details.lastName
+  : '',
+  salutation: '',
+  gender: invoiceData.cust_billing_details.gender,
+  remarks: '',
+  profession: '',
+  spouseName: '',
+  dob: invoiceData.cust_billing_details.dob
+  ? invoiceData.cust_billing_details.dateOfBirth
+  : null,
+  dateOfAnniversary: '',
+  isEmployee: '',
+  countryCode: '+91',
+  mobileNo: invoiceData.cust_mobile,
+  email: invoiceData.cust_email,
+  panNumber: '',
+  gstIdentificationNumber: invoiceData.cust_gstin,
+  tax_registration_state_code: taxRegistrationStateCode,
+  addressDetails: {
+  addressLine1: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.addressLine
+  : '',
+  addressLine2: '',
+  addressLine3: '',
+  city: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.city
+  : '',
+  state: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.state
+  : '',
+  country: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.country
+  : '',
+  postalCode: invoiceData.cust_billing_details.address
+  ? invoiceData.cust_billing_details.address.pincode != null
+  ? invoiceData.cust_billing_details.address.pincode.toString()
+  : ''
+  : '',
+  },
+  },
+  };
+
+  updatedData['data']['mopDetails'] = [];
+  updatedData['data']['tenderDetails'] = [];
+  for (const el of tender) {
+  const stillUtc = moment.utc(el.created_at).toDate();
+  const local = moment(stillUtc).local().format();
+
+  const obj = {
+  tenderId: el.ref_mop_code,
+  amount: el.amount,
+  remarks: '',
+  refNo: el.pay_id,
+  refDateTime: local,
+  additionalDetails1: null,
+  additionalDetails2: null,
+  additionalDetails3: null,
+  additionalDetails4: null,
+  };
+  const mopCategory = await this.mopsService.getMopCategoryDetails(
+  el.mop_category_id,
+  );
+  const mopOBJ = {
+  mopId: el.id,
+  mopCode: el.ref_mop_code,
+  refMopCode: el.ref_mop_code,
+  mopType: el.ref_mop_type,
+  mopAmount: el.amount,
+  mopTransaction_id: el.payment_id,
+  name: el.name,
+  mopCategory: mopCategory.length
+  ? mopCategory[0]['mop_cat_name']
+  : '',
+  cashCollected: el.cash_collected,
+  cashReturn: el.cash_return,
+  code: el.code,
+  };
+  updatedData['data']['tenderDetails'].push(obj);
+  updatedData['data']['mopDetails'].push(mopOBJ);
+  }
+
+  updatedData['data']['invoiceDetails'] = [];
+
+  for (const item of items) {
+  const itemDetails = {
+  itemDetails: {},
+  };
+  itemDetails['itemDetails']['categories'] = [];
+  itemDetails['itemDetails']['commonAttributes'] = [];
+
+  itemDetails['invoiceDetailId'] = item.id;
+  itemDetails['skuCode'] = item.skuCode;
+  const refskuCode: any = await this.skuService.getSkuCode(
+  item.skuCode,
+  );
+
+  itemDetails['refSkuCode'] = refskuCode
+  ? refskuCode.ref_sku_code
+  : '';
+  itemDetails['barcode'] = item.barcode;
+  const itemInfo: any = await this.skuService.getItemName(item.skuCode);
+
+  Object.keys(itemInfo).forEach(itemKey => {
+  if (itemKey.startsWith('a_')) {
+  let commonAttributes = {
+  attributeName: itemKey.replace('a_', ''),
+  attributeValue: itemInfo[itemKey],
+  };
+
+  itemDetails['itemDetails']['commonAttributes'].push(
+  commonAttributes,
+  );
+  const cat = itemKey.replace('a_', '');
+  if (cat.startsWith('category')) {
+  commonAttributes = {
+  attributeName: '',
+  attributeValue: itemInfo[itemKey],
+  };
+
+  const tempCat1 = cat.split('_');
+  const tempCat = tempCat1[0];
+  commonAttributes.attributeName =
+  'CNAME' + tempCat.charAt(tempCat.length - 1);
+
+  itemDetails['itemDetails']['commonAttributes'].push(
+  commonAttributes,
+  );
+  }
+  }
+
+  if (itemKey.startsWith('cat_')) {
+  const keyList = itemKey.split('_');
+
+  const parentCategoryCodeIndex =
+  parseInt(keyList[keyList.length - 1]) - 1;
+  const categoriesObj = {
+  categoryCode:
+  itemInfo[keyList[0] + '_code_' + keyList[keyList.length - 1]],
+  categoryName:
+  itemInfo[keyList[0] + '_name_' + keyList[keyList.length - 1]],
+  parentCategoryCode:
+  parentCategoryCodeIndex != 0
+  ? itemInfo[keyList[0] + '_code_' + parentCategoryCodeIndex]
+  : null,
+  level: keyList[keyList.length - 1],
+  };
+  const isCategoryPresent = itemDetails['item_details'][
+  'categories'
+  ].find(o => o.category_code === categoriesObj.categoryCode);
+  if (!isCategoryPresent)
+  //&& categoriesObj.category_code != null
+  itemDetails['itemDetails']['categories'].push(categoriesObj);
+  }
+  });
+
+  itemDetails['itemName'] = itemInfo[0].name;
+  itemDetails['quantity'] = +(+item.qty).toFixed(2);
+  itemDetails['mrp'] = +(+item.unitMrp).toFixed(2);
+  itemDetails['rsp'] = +(+item.unitRsp).toFixed(2);
+  itemDetails['esp'] = +(+item.effectivePrice).toFixed(2);
+  let taxDetails = JSON.parse(item.tdata);
+
+  taxDetails = taxDetails != null && taxDetails != '' ? taxDetails : {};
+  itemDetails['taxType'] =
+  taxDetails.taxType != undefined ? taxDetails.tax_type : 0;
+  itemDetails['hsnCode'] =
+  taxDetails.hsn != undefined ? taxDetails.hsn : 0;
+  itemDetails['taxRate'] =
+  taxDetails.tax != undefined ? taxDetails.tax : 0;
+  itemDetails['grossAmount'] = item.subtotal;
+
+  let discount = 0.0;
+  let promoAmt: any = 0.0;
+  let itemDiscountAmt: any = 0.0;
+  let memoDiscountAmt: any = 0.0;
+  let loyaltyDiscountAmt: any = 0.0;
+  let specialChargeAmt: any = 0.0;
+  let chargeDetails: any = [];
+  if (discountDetails.length != 0) {
+  chargeDetails = await this.invoiceChargesService.getChargeDetails(
+  item.id,
+  );
+
+  chargeDetails.forEach(chargeDetail => {
+  discount +=
+  chargeDetail.chargeCategory == 'ILP'
+  ? +parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  discount +=
+  chargeDetail.chargeCategory == 'BLP'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  discount +=
+  chargeDetail.chargeCategory == 'BLMD'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  discount +=
+  chargeDetail.chargeCategory == 'ILMD'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  promoAmt +=
+  chargeDetail.chargeCategory == 'ILP'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  promoAmt +=
+  chargeDetail.chargeCategory == 'BLP'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  itemDiscountAmt +=
+  chargeDetail.chargeCategory == 'ILMD'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  memoDiscountAmt +=
+  chargeDetail.chargeCategory == 'BLMD'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  memoDiscountAmt +=
+  chargeDetail.chargeCategory == 'CPN'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  loyaltyDiscountAmt +=
+  chargeDetail.chargeCategory == 'LOY'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  specialChargeAmt +=
+  chargeDetail.chargeCategory == 'PECHG'
+  ? parseFloat(chargeDetail.charge_amount)
+  : 0.0;
+
+  promoAmt = +(+promoAmt).toFixed(2);// parseFloat(parseFloat(promoAmt).toFixed(2));
+  discount = +(+promoAmt).toFixed(2);// parseFloat(parseFloat(promoAmt).toFixed(2));
+  itemDiscountAmt = +(+itemDiscountAmt).toFixed(2);//parseFloat(parseFloat(itemDiscountAmt).toFixed(2));
+  memoDiscountAmt = +(+memoDiscountAmt).toFixed(2); //parseFloat(parseFloat(memoDiscountAmt).toFixed(2));
+  loyaltyDiscountAmt = +(+loyaltyDiscountAmt).toFixed(2) //parseFloat(parseFloat(loyaltyDiscountAmt).toFixed(2));
+  specialChargeAmt = +(+specialChargeAmt).toFixed(2); //parseFloat(parseFloat(specialChargeAmt).toFixed(2)); //as per chandu
+  });
+  }
+
+  itemDetails['discountBreakUp'] = {
+  promoAmt: promoAmt,
+  itemDiscountAmt: itemDiscountAmt,
+  memoDiscountAmt: memoDiscountAmt,
+  loyaltyDiscountAmt: loyaltyDiscountAmt,
+  specialChargeAmt: specialChargeAmt,
+  };
+
+  itemDetails['discountAmount'] = +(+item.discount).toFixed(2); //parseFloat(item.discount);
+  itemDetails['taxableAmount'] =
+  taxDetails.taxable != undefined ? +(+taxDetails.taxable).toFixed(2) : 0;
+  itemDetails['taxAmount'] =
+  taxDetails.tax != undefined ? +(+taxDetails.tax).toFixed(2) : 0;
+  itemDetails['netAmount'] =
+  taxDetails.netamt != undefined ? +(+taxDetails.netamt).toFixed(2) : 0;
+  itemDetails['extraChargeAmount'] = item?.extraCharge ? +(+item.extraCharge).toFixed(2) : 0;
+  itemDetails['total'] = +(+item.total).toFixed(2);// item.total;
+  itemDetails['remarks'] = item.remark;
+
+  itemDetails['itemDiscountDetails'] = [];
+
+  if (chargeDetails.length)
+  chargeDetails.forEach(itemPromo => {
+  const promo = {
+  discountType: itemPromo.chargeCategory,
+  discountCode: itemPromo.chargeCode,
+  discountBehaviour: itemPromo.chargeBehavior,
+  discountFactor: +(+itemPromo.chargeFactor).toFixed(2),// parseFloat(itemPromo.chargeFactor),
+  discountAmount: +(+itemPromo.charge_amount).toFixed(2),//parseFloat(itemPromo.charge_amount),
+  discountDescription: itemPromo.chargeName,
+  applicabilityLevel:
+  itemPromo.chargeType == 'ILP' ||
+  itemPromo.chargeType == 'ILMD'
+  ? 'item_level'
+  : 'bill_level',
+  discountStart_date: '',
+  discountEnd_time: '',
+  discountDetails: itemPromo.chargeAllocationDetails,
+  };
+  itemDetails['itemDiscountDetails'].push(promo);
+  if (itemPromo.charge_category == 'ILP') {
+  const charge_allocation_details =
+  itemPromo.chargeAllocationDetails != '' &&
+  itemPromo.chargeAllocationDetails != undefined
+  ? JSON.parse(itemPromo.chargeAllocationDetails)
+  : null;
+  if (
+  charge_allocation_details != undefined &&
+  charge_allocation_details != null
+  ) {
+  itemDetails['promoDetails'].push({
+
+  message: itemPromo.charge_name,
+  promoCode: itemPromo.charge_code,
+  promoNo: itemPromo.charge_code,
+  startDate: charge_allocation_details.STARTDATE,
+  endDate: charge_allocation_details.ENDDATE,
+  amount: itemPromo.amount,
+  });
+  }
+  }
+  });
+  itemDetails['taxDetails'] = taxDetails;
+
+  itemDetails['itemExtraChargeDetails'] = [
+  {
+  chargeType: '',
+  chargeCode: '',
+  chargeDescription: '',
+  chargeBehaviour: '',
+  chargeFactor: '',
+  chargeAmount: '',
+  },
+  ];
+
+  itemDetails['productType'] =
+  item.batchId != 0
+  ? 'BATCH'
+  : item.serialId != 0
+  ? 'SERIAL'
+  : 'NORMAL';
+
+  const batch_Searil_detail: any =
+  item.batchId != 0
+  ? await this.batchService.getBatch(item.batchId)
+  : item.serialId != 0
+  ? await this.serialService.getSerial(item.serialId)
+  : '';
+
+  const batch_serial_code =
+  item.batchId != 0
+  ? batch_Searil_detail.temp_batch_no
+  : item.serialId != 0
+  ? batch_Searil_detail.temp_serial_no
+  : '';
+
+  itemDetails['batchSerialId'] = batch_Searil_detail.id;
+  itemDetails['batchSerialCode'] = batch_serial_code
+  ? batch_serial_code
+  : '';
+
+  updatedData['data']['invoiceDetails'].push(itemDetails);
+  } //end of items loop
+  updatedData['data']['discountDetails'] = [];
+
+  discountDetails.forEach(discnt => {
+  if (
+  discnt.charge_category == 'BLMD' ||
+  discnt.charge_category == 'CPN' ||
+  discnt.charge_category == 'LOY' ||
+  discnt.charge_category == 'BLP'
+  ) {
+  const obj = {
+  discountType: discnt.charge_category,
+  discountCode: discnt.charge_code,
+  discountBehaviour: discnt.charge_behavior,
+  discountFactor: parseFloat(discnt.charge_factor),
+  discountAmount: parseFloat(discnt.discount),
+  discountDescription: discnt.charge_name,
+  applicabilityLevel: 'bill_level',
+  discountStartDate: '',
+  discountEndTime: '',
+  discountDetails: discnt.charge_allocation_details,
+  };
+
+  const isExits = updatedData['data']['discountDetails'].find(
+  item => {
+  return item.discountCode == discnt.chargeCode;
+  },
+  );
+
+  if (!isExits) updatedData['data']['discountDetails'].push(obj);
+  }
+  });
+
+  if (paymentStatus) {
+  if (
+  paymentStatus.gateway_response &&
+  paymentStatus.gateway_response !== 'null' &&
+  discountDetails.length == 0
+  // &&
+  // (discountDetails discountDetails[0].discountDetails == '' ||
+  // discountDetails[0].discountDetails == null)
+  ) {
+  const gatewayResponse = JSON.parse(paymentStatus.gateway_response);
+  updatedData['data']['discountDetails'].push({
+  discountType: 'LOY',
+  discountCode: '',
+  discountBehaviour: '',
+  discountFactor: 0.00,
+  discountAmount: 0.00,
+  discountDescription: '',
+  applicabilityLevel: '',
+  discountStartDate: '',
+  discountEndTime: '',
+  discountDetails: gatewayResponse,
+  });
+  }
+  } else {
+  updatedData['data']['discountDetails'].push({
+  discountType: 'LOY',
+  discountCode: '',
+  discountBehaviour: '',
+  discountFactor: 0.00,
+  discountAmount: 0.00,
+  discountDescription: '',
+  applicabilityLevel: '',
+  discountStartDate: '',
+  discountEndTime: '',
+  discountDetails: '',
+  });
+  }
+
+  updatedData['data']['einvoiceDetails'] = [
+  {
+  inr_number: '',
+  ack_number: '',
+  ack_date: '',
+  qr_code_data: '',
+  },
+  ];
+
+
+  updatedData['data']['storeDetails'] = {
+  gst: '',
+  name: '',
+  address1: '',
+  address2: '',
+  location: '',
+  pincode: '',
+  contact_person: '',
+  phone: '',
+  email: '',
+  state_code: '',
+  refStoreCode: storeDetails
+  ? storeDetails['store_reference_code']
+  : '',
+  shortCode: storeDetails
+  ? storeDetails['short_code']
+  : '',
+  storeShortCode: storeDetails
+  ? storeDetails['short_code']
+  : '',
+
+  };
+  if (storeAddDetails.length)
+  updatedData['data']['storeDetails'] = { ...storeAddDetails[0] };
+
+  updatedData['data']['storeDetails'] = {
+
+  ...updatedData['data']['storeDetails'],
+  refStoreCode: storeDetails
+  ? storeDetails['store_reference_code']
+  : '',
+  shortCode: storeDetails
+  ? storeDetails['short_code']
+  : '',
+  storeShortCode: storeDetails
+  ? storeDetails['short_code']
+  : '',
+  }
+
+  updatedData['data']['udf'] = invoiceData.udf;
+
+  updatedData['data']['date'] =
+  typeof invoiceData.date == 'number'
+  ? convertInt32ToDate(invoiceData.date)
+  : invoiceData.date;
+
+  if (!isForWay) {
+  eventLogObj = <IOutboundEventLogs>{
+    v_id: +invoiceData.v_id,
+    event_name: event_name,
+    event_type: EventType.find(o => o.op === source.op)['type'],
+    doc_number: invoiceData.invoice_id,
+    event_status: 'Generated',
+    error: '',
+    active_subscribers: active_subscribers_List.length,
+    active_subscribers_List: active_subscribers_List,
+    transaction_id: source.ts_ms,
+    request_data: updatedData,
+    };
+
+    this.outboundEventLogRepo.createEventLogs(eventLogObj);
+
+    //also need to store saame log in Generic_event-log for v_id:210
+    for (const consumber of active_subscribers_List) {
+    const eInvoiceEway =
+    await this.eventSubscriberRepository.isEinvoiceEwayConsumer({
+    Partner_identifier: consumber,
+    v_id: v_id,
+    event_code: { $in: [subscriberList['data'][0].event_code] },
+    });
+    if (consumber == 'ZWIP-1662462031427001') {
+    await this.genericEventLogsRepository.save({ ...eventLogObj, request_data: updatedData })
+    } else {
+    await Dispatch({
+    job: 'ZW_MN_' + v_id + '_' + source.table,
+    data: { ...updatedData, consumerName: consumber }, //eInvoiceEway: eInvoiceEway.isEInvoice || eInvoiceEway.isGst
+    });
+    }
+    }
+    } else {
+    return updatedData.data;
+    }
+    }
+    } catch (err) {
+    console.log(err);
+    }
+    }
+
+    // async getTaxableAmt(dbName: string, wherClause: any, selectFields = ['*']) {
+    // const invoiceDetails = await invoiceDetailsTable(dbName, this.drizzle);
+    // const result = await this.drizzle
+    // .select({
+    // tdata: invoiceDetails.tdata,
+    // id: invoiceDetails.id,
+    // sku_code: invoiceDetails.skuCode,
+    // unit_mrp: invoiceDetails.unitMrp,
+    // unit_csp: invoiceDetails.unitSsp,
+    // })
+    // .from(invoiceDetails)
+    // .where(eq(invoiceDetails[wherClause.key], wherClause.value))
+    // .execute();
+
+    // let taxable_amount = 0;
+    // let tax_amount = 0;
+    // const itemDetails = [];
+    // for (const el of result) {
+    // const tData = JSON.parse(el.tdata);
+    // taxable_amount += parseFloat(tData.taxable);
+    // tax_amount += parseFloat(tData.tax);
+    // itemDetails.push({ el, ...tData });
+    // }
+    // return [
+    // {
+    // taxable_amount: taxable_amount,
+    // tax_amount: tax_amount,
+    // itemDetails: itemDetails,
+    // },
+    // ];
+    // }
+    // async invoiceLogs(dbName: string, wherClause: any, selectFields = ['*']) {
+    // console.log("Line 1000 invoiceLogs :: 1");
+    // const invoiceLogs = await invoiceLogsTable(dbName, this.drizzle);
+    // let query = this.drizzle
+    // .select({ invoiceLogs })
+    // .from(invoiceLogs)
+    // .where(eq(invoiceLogs[wherClause.key], wherClause.value));
+    // console.log(query.toSQL());
+
+    // return await this.drizzle
+    // .select({ invoiceLogs })
+    // .from(invoiceLogs)
+    // .where(eq(invoiceLogs[wherClause.key], wherClause.value)).execute();
+    // }
+
+    // async getInvoiceItem(dbName: string, wherClause: any, selectFields = ['*']) {
+    // const invoiceDtails = await invoiceDetailsTable(dbName, this.drizzle);
+
+    // const result = await query.execute();
+    // const finalResult: any = result.map(item => ({
+    // id: item['invoiceDtails']['id'],
+    // transactionType: item['invoiceDtails']['transactionType'],
+    // storeId: item['invoiceDtails']['storeId'],
+    // vId: item['invoiceDtails']['vId'],
+    // orderId: item['invoiceDtails']['orderId'],
+    // exchangeAgainstId: item['invoiceDtails']['exchangeAgainstId'],
+    // tOrderId: item['invoiceDtails']['tOrderId'],
+    // userId: item['invoiceDtails']['userId'],
+    // weightFlag: item['invoiceDtails']['weightFlag'],
+    // pluBarcode: item['invoiceDtails']['pluBarcode'],
+    // barcode: item['invoiceDtails']['barcode'],
+    // skuCode: item['invoiceDtails']['skuCode'],
+    // itemName: item['invoiceDtails']['itemName'],
+    // itemId: item['invoiceDtails']['itemId'],
+    // batchId: item['invoiceDtails']['batchId'],
+    // serialId: item['invoiceDtails']['serialId'],
+    // itemPromoId: item['invoiceDtails']['itemPromoId'],
+    // qty: item['invoiceDtails']['qty'],
+    // subtotal: item['invoiceDtails']['subtotal'],
+    // unitMrp: item['invoiceDtails']['unitMrp'],
+    // unitRsp: item['invoiceDtails']['unitRsp'],
+    // unitSsp: item['invoiceDtails']['unitSsp'],
+    // effectivePrice: item['invoiceDtails']['effectivePrice'],
+    // priceFrom: item['invoiceDtails']['priceFrom'],
+    // overrideUnitPrice: item['invoiceDtails']['overrideUnitPrice'],
+    // overrideReason: item['invoiceDtails']['overrideReason'],
+    // overrideFlag: item['invoiceDtails']['overrideFlag'],
+    // overrideBy: item['invoiceDtails']['overrideBy'],
+    // discount: item['invoiceDtails']['discount'],
+    // returnAllowed: item['invoiceDtails']['returnAllowed'],
+    // lpdiscount: item['invoiceDtails']['returnAllowed'],
+    // manualDiscount: item['invoiceDtails']['manualDiscount'],
+    // itemLevelManualDiscount: item['invoiceDtails']['itemLevelManualDiscount'],
+    // couponDiscount: item['invoiceDtails']['couponDiscount'],
+    // employeeId: item['invoiceDtails']['employeeId'],
+    // employeeDiscount: item['invoiceDtails']['employeeDiscount'],
+    // billBusterDiscount: item['invoiceDtails']['billBusterDiscount'],
+    // tax: item['invoiceDtails']['tax'],
+    // netAmount: item['invoiceDtails']['netAmount'],
+    // extraCharge: item['invoiceDtails']['extraCharge'],
+    // total: item['invoiceDtails']['total'],
+    // isCatalog: item['invoiceDtails']['isCatalog'],
+    // status: item['invoiceDtails']['status'],
+    // returnCode: item['invoiceDtails']['returnCode'],
+    // transFrom: item['invoiceDtails']['transFrom'],
+    // vuId: item['invoiceDtails']['vuId'],
+    // salesmanId: item['invoiceDtails']['salesmanId'],
+    // date: item['invoiceDtails']['date'],
+    // time: item['invoiceDtails']['time'],
+    // month: item['invoiceDtails']['month'],
+    // year: item['invoiceDtails']['year'],
+    // delivery: item['invoiceDtails']['delivery'],
+    // utcDatetime: item['invoiceDtails']['utcDatetime'],
+    // createdAt: item['invoiceDtails']['createdAt'],
+    // deletedAt: item['invoiceDtails']['deletedAt'],
+    // updatedAt: item['invoiceDtails']['updatedAt'],
+    // slab: item['invoiceDtails']['slab'],
+    // targetOffer: item['invoiceDtails']['targetOffer'],
+    // sectionTargetOffers: item['invoiceDtails']['sectionTargetOffers'],
+    // sectionOffers: item['invoiceDtails']['sectionOffers'],
+    // departmentId: item['invoiceDtails']['departmentId'],
+    // subclassId: item['invoiceDtails']['subclassId'],
+    // printclassId: item['invoiceDtails']['printclassId'],
+    // pdata: item['invoiceDtails']['pdata'],
+    // tdata: item['invoiceDtails']['tdata'],
+    // chargeDetails: item['invoiceDtails']['chargeDetails'],
+    // remark: item['invoiceDtails']['remark'],
+    // groupId: item['invoiceDtails']['groupId'],
+    // divisionId: item['invoiceDtails']['divisionId'],
+    // channelId: item['invoiceDtails']['channelId'],
+    // viPriceId: item['invoiceDtails']['viPriceId'],
+    // reasonId: item['invoiceDtails']['reasonId'],
+    // reason: item['invoiceDtails']['reason'],
+    // exchangeProductId: item['invoiceDtails']['exchangeProductId'],
+    // }));
+    // return finalResult;
+    // }
+    }
+
+
+
+
+
+    =================EJS Template=================
+
+
+    <% 
+let result={
+    v_id:data.data.enterpriseCode,
+    transactionSiteCode: data.data.storeDetails?.refStoreCode?data.data.storeDetails.refStoreCode:'',
+    invoiceType: 'NEW', 
+    channelType: 'RTL', 
+    channelCode:data.data.channelCode?data.data.channelCode:null,
+    tradeGroup: data.data.tradeBoundary, 
+    intgInvoiceId: String(data.data.docId), 
+    parentIntgInvoiceId: null,
+    parentIntgInvoiceNo: data.data.refDocId,
+    intgDocSchemeCode: '0',
+    salesStockPointid:data.data.transactioType != 'return' ? data.data.stockPointCode ? data.data.stockPointCode:null:null,
+    returnStockPointid:data.data.transactionType == 'return'? data.data.stockPointCode ? data.data.stockPointCode:null:null,
+    damageStockPointid: null, 
+    parenIntgInvoiceDate: null, 
+    channelInvoiceNo:data.data.docNo,
+    channelInvoiceDate:data.data.createdAt ? data.data.createdAt.replace('Z', '+05:30'): '',
+    remarks: data.data.remark,
+    eInvoiceAppl: false, 
+    valueDetails: {
+          invoiceValue:
+            data.data.transactionType != "return" ? data.data.netAmount : data.data.netAmount * -1,
+          invoiceRoundOff: data.data.roundOff && data.data.roundOff !== "" ? data.data.transactionType !== "return" ? data.data.roundOff : data.data.roundOff * -1 : 0,
+          
+          invoicePayableAmount:
+           data.data.transactionType != "return" ? data.data.total : data.data.total * -1,
+          codAmount: 0,
+        },
+    deliveryDetails: {
+        billToShipToSame: true, 
+        transporterId: null, 
+        createCustomer: false,
+        billingCustomerDetail: {
+          firstName:  !data.data.customerDetails.billingDetails.firstName ? '':data.data.customerDetails.billingDetails.firstName, 
+          middleName: null,
+
+          lastName:!data.data.customerDetails.billingDetails.lastName ? '': data.data.customerDetails.billingDetails.lastName, 
+
+          salutation: !data.data.customerDetails.billingDetails.salutation  ?   '':data.data.customerDetails.billingDetails.salutation ,
+    
+         gender: !data.data.customerDetails.billingDetails.gender   ? '': data.data.customerDetails.billingDetails.gender.toLowerCase() == 'male' ? 'M' : 'F'  , 
+        
+         remarks: !data.data.customerDetails.billingDetails.mobileNo  ? '':data.data.customerDetails.billingDetails.mobileNo.toString() ,
+        
+        profession: !data.data.customerDetails.billingDetails.profession ? '' : data.data.customerDetails.billingDetails.profession  ,
+        
+        spouseName:  !data.data.customerDetails.billingDetails.spouseName   ? ''  : data.data.customerDetails.billingDetails.spouseName,
+         
+         dateOfBirth: !data.data.customerDetails.billingDetails.dob && data.data.customerDetails.billingDetails.dob != '0000-00-00' ?   null:data.data.customerDetails.billingDetails.dob, 
+          
+
+          isEmployee: false,
+         
+          isdCode: !data.data.customerDetails.billingDetails.countryCode  ? '': data.data.customerDetails.billingDetails.countryCode ,
+        
+          mobileNumber: !data.data.customerDetails.billingDetails.mobileNo  ?'': data.data.customerDetails.billingDetails.mobileNo.length == 10 ? data.data.customerDetails.billingDetails.mobileNo : '' ,
+  
+         email: !data.data.customerDetails.billingDetails.email  ?'': data.data.customerDetails.billingDetails.email,
+    
+    panNumber: !data.data.customerDetails.billingDetails.panNumber  ? '': data.data.customerDetails.billingDetails.panNumber ,
+    
+    gstIdentificationNumber: !data.data.customerDetails.billingDetails.gstIdentificationNumber ?'': data.data.customerDetails.billingDetails.gstIdentificationNumber ,
+    
+    gstStateCode: data.data.tradeType == 'B2C' ? data.data.fulfillmentMode == 'delivery' ? data.data.customerDetails.billingDetails.taxRegistrationStateCode : data.data.storeStateCode : data.data.tradeType == 'B2B' ? data.data.customerDetails.billingDetails.taxRegistrationStateCode : '200',
+    addressDetails: {
+      addressLine1: !data.data.customerDetails.billingDetails.addressDetails.addressLine1 ? '': data.data.customerDetails.billingDetails.addressDetails.addressLine1 ,
+        addressLine2: !data.data.customerDetails.billingDetails.addressDetails.addressLine2  ?'': data.data.customerDetails.billingDetails.addressDetails.addressLine2 ,
+      addressLine3: !data.data.customerDetails.billingDetails.addressDetails.addressLine3  ?'': data.data.customerDetails.billingDetails.addressDetails.addressLine3 ,
+      city: !data.data.customerDetails.billingDetails.addressDetails.city  ?'': data.data.customerDetails.billingDetails.addressDetails.city ,
+      state: !data.data.customerDetails.billingDetails.addressDetails.state  ?'': data.data.customerDetails.billingDetails.addressDetails.state ,
+      country: !data.data.customerDetails.billingDetails.addressDetails.country  ?'': data.data.customerDetails.billingDetails.addressDetails.country ,
+      postalCode: !data.data.customerDetails.billingDetails.addressDetails.postalCode?'': data.data.customerDetails.billingDetails.addressDetails.postalCode ,
+    }
+
+        },
+        
+        itemDetails: [],
+      },
+    
+    
+    tenderDetails:[]
+}
+%>
+
+
+
+
+    <% 
+const summary = data.data.tenderDetails.reduce((acc, transaction) => {
+    const tenderId = transaction.tenderId;
+    const amount = parseFloat(transaction.amount);
+    if (acc[tenderId]) {
+        acc[tenderId].amount += amount;
+    } else {
+        acc[tenderId] = { 
+            tenderId: tenderId, 
+            amount: amount,
+            remarks: transaction.remarks, 
+            refNo: transaction.refNo,     
+            refDateTime: transaction.refDateTime, 
+            additionalDetails1: transaction.additionalDetails1, 
+            additionalDetails2: transaction.additionalDetails2, 
+            additionalDetails3: transaction.additionalDetails3, 
+            additionalDetails4: transaction.additionalDetails4  
+        };
+    }
+    return acc;
+}, {});
+
+
+result.tenderDetails = Object.values(summary).map(item => ({
+    tenderId: item.tenderId,
+    amount: item.amount.toFixed(2), // Format to 2 decimal places
+    remarks: item.remarks,
+    refNo: item.refNo,
+    refDateTime: item.refDateTime,
+    additionalDetails1: item.additionalDetails1,
+    additionalDetails2: item.additionalDetails2,
+    additionalDetails3: item.additionalDetails3,
+    additionalDetails4: item.additionalDetails4
+}));
+%>
+
+    <% 
+data.data.invoiceDetails.forEach((item) => {
+    const taxDetails = item.taxDetails || {};
+    
+    
+    const taxRateCal = [
+        taxDetails.CGST,
+        taxDetails.IGST,
+        taxDetails.CESS,
+        taxDetails.SGST,
+    ].reduce((acc, rate) => parseFloat(acc) + (parseFloat(rate) ? parseFloat(rate) : 0), 0);
+
+    const transactionMultiplier = data.data.transactionType === 'return' ? -1 : 1;
+
+    let itemDetailsTemp = {
+        itemCode: item.refSkuCode,
+        isDamageItem: false,
+        intgInvoiceDetId: item.invoiceDetailId.toString(),
+        parentIntgInvoiceDetId: null,
+        hsnSacCode: item.hsnCode?.toString() || '',
+        remarks: item.remarks || '',
+        invoiceQuantity: (item.quantity || 0) * transactionMultiplier,
+        itemRate: item.esp || 0,
+        grossAmount: (item.grossAmount || 0) * transactionMultiplier,
+        netAmount: (item.total || 0) * transactionMultiplier,
+        itemTaxDetails: {
+            taxRegime: 'G',
+            taxableAmount: parseFloat(item.taxDetails.taxable).toFixed(2) * transactionMultiplier,
+            taxRate: taxRateCal,
+            taxAmount: parseFloat(item.taxDetails.tax).toFixed(2) * transactionMultiplier,
+            cgstRate: parseFloat(taxDetails.CGST || 0).toFixed(3),
+            sgstRate: parseFloat(taxDetails.SGST || 0).toFixed(3),
+            igstRate: parseFloat(taxDetails.IGST || 0).toFixed(3),
+            cessRate: parseFloat(taxDetails.CESS || 0).toFixed(3),
+            taxDescription: taxDetails.tax_name,
+            isDynamicTaxApplicable: false,
+            cgstAmount: (taxDetails.cgstamt || 0) * transactionMultiplier,
+            sgstAmount: (taxDetails.sgstamt || 0) * transactionMultiplier,
+            igstAmount: (taxDetails.igstamt || 0) * transactionMultiplier,
+            cessAmount: (taxDetails.cessamt || 0) * transactionMultiplier,
+        },
+        applicableCharges: {
+            itemDiscount: (item.discount_amount || 0) * transactionMultiplier,
+            codCharge: 0,
+            giftWrapCharge: 0,
+            shippingCharge: 0,
+            otherCharges: 0,
+        },
+        discountBreakUp: {
+                   ...item.discountBreakUp
+              },
+        batchSerialNo:item?.batchSerialCode?item?.batchSerialCode:null,
+    };
+
+    
+    if (item.promoDetails) {
+        itemDetailsTemp.promoDetails = item.promoDetails.map(pdetails => {
+            const start_date = moment.utc(pdetails.start_date).local().format();
+            const end_date = moment.utc(pdetails.end_date).local().format();
+            return {
+                promoCode: pdetails.promoCode,
+                promoNo: pdetails.promoNo,
+                promoName: pdetails.message,
+                promoStartDate: startDate,
+                promoEndDate: endDate,
+                promoAmt: pdetails.amount,
+            };
+        });
+    }
+
+    
+    if (data.data.transactionType == 'return') {
+        Object.keys(item.discountBreakUp).forEach(key => {
+            item.discountBreakUp[key] *= -1;
+        });
+        itemDetailsTemp.discountBreakUp={ ...item.discountBreakUp }
+    }
+ 
+    result.deliveryDetails.itemDetails.push(itemDetailsTemp);
+});
+
+%>
+
+
+    <%- JSON.stringify(result, null, 2) %>

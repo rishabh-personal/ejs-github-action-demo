@@ -1,0 +1,99 @@
+<%
+let result = {
+    siteCode: parseInt(data.data.ref_store_code),
+    stockpointId: data.data.ref_allocation_stock_point_code  ? parseInt(data.data.ref_allocation_stock_point_code) : '',
+    stockpointName: data.data.stock_point_name ? data.data.stock_point_name : '',
+    type: (data.data.stock_point_type == 'STOCK') ? 'S' : 'G',
+    isExtinct: data.data.status == "1" ? false : true,
+    transaction_id: data.data.transaction_id,
+}
+%>
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Keys and Values
+
+{
+// Root Level Required
+"siteCode": data.data.ref_store_code, // Store code (integer)
+"stockpointId": data.data.ref_allocation_stock_point_code, // Stock point ID (integer)
+"type": data.data.stock_point_type == 'STOCK' ? 'S' : 'G', // Type (S for Stock, G for General)
+"isExtinct": data.data.status == "1" ? false : true, // Status boolean
+"transaction_id": data.data.transaction_id // Transaction ID
+}
+
+
+
+### Optional Keys and Values
+
+{
+// Root Level Optional
+"stockpointName": data.data.stock_point_name || '' // Stock point name (string)
+}
+
+
+
+### Data Types:
+
+
+
+Data Types:
+
+1. Required Fields:
+
+siteCode: Integer
+stockpointId: Integer
+type: String (either 'S' or 'G')
+isExtinct: Boolean
+transaction_id: String/Integer
+
+2. Optional Fields:
+
+stockpointName: String
+
+
+
+
+### Complete Example:
+
+let result = {
+// Required Fields
+siteCode: parseInt(data.data.ref_store_code),
+stockpointId: parseInt(data.data.ref_allocation_stock_point_code),
+type: (data.data.stock_point_type == 'STOCK') ? 'S' : 'G',
+isExtinct: data.data.status == "1" ? false : true,
+transaction_id: data.data.transaction_id,
+
+// Optional Field
+stockpointName: data.data.stock_point_name || ''
+}
+
+
+
+
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.ref_store_code" -> "siteCode" // Integer
+"data.data.ref_allocation_stock_point_code" -> "stockpointId" // Integer
+"data.data.stock_point_type" -> "type" // Transform: 'STOCK' -> 'S', else -> 'G'
+"data.data.status" -> "isExtinct" // Transform: "1" -> false, else -> true
+"data.data.transaction_id" -> "transaction_id" // String
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.stock_point_name" -> "stockpointName" // Default: ''
+}

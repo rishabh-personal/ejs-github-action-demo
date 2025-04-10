@@ -1,0 +1,75 @@
+<% //store_expennse as well
+let result = {
+    intgRefId:  data.data.doc_id.toString() ,
+    posJournalNo:data.data.doc_no ,
+    posJournalDate:  data.data.created_at ,
+    transactionSiteCode: data.data.ref_store_code,
+    remarks: data.data.remarks  ? data.data.remarks : '',
+    pettyHeadId:  data.data.ref_transaction_cash_point_id ,
+    grossAmount:  data.data.amount  ? data.data.amount : 0 ,
+    headerAmount: data.data.amount ,
+    tenderDetails:
+    data.data.mop_details.map(item=>({
+        tenderId: parseInt(item.ref_mop_code), 
+        amount: data.data.amount * -1, 
+        remarks: "",
+        refNo: "",
+        refDateTime: data.data.created_at,
+        additionalDetails1: "",
+        additionalDetails2: "",
+        additionalDetails3: "",
+        additionalDetails4: ""
+    }))
+    
+};
+%>
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Key Mapping
+````javascript
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.doc_id.toString()" -> "intgRefId"
+"data.data.doc_no" -> "posJournalNo"
+"data.data.created_at" -> "posJournalDate"
+"data.data.ref_store_code" -> "transactionSiteCode"
+"data.data.ref_transaction_cash_point_id" -> "pettyHeadId"
+"data.data.amount" -> "grossAmount"
+"data.data.amount" -> "headerAmount"
+}
+
+// TENDER DETAILS REQUIRED (tenderDetails array)
+{
+"item.ref_mop_code" -> "tenderId"
+"data.data.amount * -1" -> "amount" // Negated amount
+"data.data.created_at" -> "refDateTime"
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.remarks" -> "remarks" // Default: ''
+}
+
+// TENDER DETAILS OPTIONAL
+{
+"" -> "remarks" // Empty string
+"" -> "refNo" // Empty string
+"" -> "additionalDetails1" // Empty string
+"" -> "additionalDetails2" // Empty string
+"" -> "additionalDetails3" // Empty string
+"" -> "additionalDetails4" // Empty string
+}

@@ -1,0 +1,122 @@
+<%
+let result={
+        storeId: data.data.ref_source_location_code,
+        packetNo: data.data.code,
+        packetDate: data.data.created_at,
+        remarks: data.data?.remarks ? data.data.remarks:'',
+        outStockpointId: parseInt(data.data.ref_stock_point_code),
+        replenishmentSiteCode: parseInt(data.data.ref_destination_location_code),
+        packetCreationMode: data.data.packet_creation_mode == 'Against Advice' ? 'Against Order' : 'Adhoc',
+        intgRefId: data.data.doc_id.toString(),
+        packetItems:
+        data.data.packet_items.map(item => (
+            {
+                itemId: item.ref_sku_code,
+                qty: item.quantity,
+                intgRefDetId: item.packet_detail_id.toString(),
+                adviceId: data.data?.ref_advice_id ? data.data.ref_advice_id:'',
+                adviceDetailId:item.ref_advice_detail_id?item.ref_advice_detail_id:'',
+                batchSerialCode:item?.batch_serial_code ? item.batch_serial_code :null
+            }
+        ))
+        
+        
+}
+%>
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Example with Actual Data Transformation:
+
+let result = {
+// Required Fields
+storeId: data.data.ref_store_code,
+packetNo: data.data.code,
+packetDate: data.data.created_at,
+outStockpointId: parseInt(data.data.ref_stock_point_code),
+replenishmentSiteCode: parseInt(data.data.ref_destination_location_code),
+packetCreationMode: data.data.packet_creation_mode == 'Against Advice' ? 'Against Order' : 'Adhoc',
+intgRefId: data.data.doc_id.toString(),
+
+// Optional Fields
+remarks: data.data?.remarks || '',
+
+// Items Array (with both required and optional fields)
+packetItems: data.data.packet_items.map(item => ({
+// Required Item Fields
+itemId: item.ref_sku_code,
+qty: item.quantity,
+intgRefDetId: item.packet_detail_id.toString(),
+
+// Optional Item Fields
+adviceId: data.data?.ref_advice_id || '',
+adviceDetailId: item.ref_advice_detail_id || '',
+batchSerialCode: item?.batch_serial_code || null
+}))
+}
+
+
+
+
+
+Data Types:
+storeId: String
+packetNo: String
+packetDate: DateTime String
+outStockpointId: Integer
+replenishmentSiteCode: Integer
+packetCreationMode: String ('Against Order' or 'Adhoc')
+intgRefId: String
+remarks: String
+itemId: String
+qty: Number
+intgRefDetId: String
+adviceId: String
+adviceDetailId: String
+batchSerialCode: String or null
+
+
+
+
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.ref_source_location_code" -> "storeId"
+"data.data.code" -> "packetNo"
+"data.data.created_at" -> "packetDate"
+"data.data.ref_stock_point_code" -> "outStockpointId"
+"data.data.ref_destination_location_code" -> "replenishmentSiteCode"
+"data.data.packet_creation_mode" -> "packetCreationMode" // Transform: 'Against Advice' -> 'Against Order'
+"data.data.doc_id.toString()" -> "intgRefId"
+}
+
+// ITEM LEVEL REQUIRED (packetItems array)
+{
+"item.ref_sku_code" -> "itemId"
+"item.quantity" -> "qty"
+"item.packet_detail_id.toString()" -> "intgRefDetId"
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.remarks" -> "remarks" // Default: ''
+}
+
+// ITEM LEVEL OPTIONAL
+{
+"data.data.ref_advice_id" -> "adviceId" // Default: ''
+"item.ref_advice_detail_id" -> "adviceDetailId" // Default: ''
+"item.batch_serial_code" -> "batchSerialCode" // Default: null
+}
