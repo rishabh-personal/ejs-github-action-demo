@@ -70,7 +70,7 @@ async function updateTemplate(ejsFilePath, enterpriseConfig) {
       throw new Error(`No API base URL found for ${enterpriseId}`);
     }
     
-    const apiUrl = `${apiBaseUrl};
+    const apiUrl = `${apiBaseUrl}`;
     const authToken = enterpriseConfig.authToken || process.env.API_KEY;
     
     // Prepare the request payload
