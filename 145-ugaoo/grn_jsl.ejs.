@@ -1,0 +1,36 @@
+<% 
+let result={ 
+  "DocumentDate": moment(data.data.created_at).format('YYYYMMDD'),
+  "PostingDate": moment(data.data.created_at).format('YYYYMMDD'),
+  "MaterialDocumentHeaderText": data.data.ref_advice_id,
+  "ReferenceDocument": data.data.ref_doc_id,
+  "GoodsMovementCode": "01",
+  "to_MaterialDocumentItem": [
+  data.data.grn_items.map(item => ({
+     "Material": item.sku_code,
+      "Plant": data.data.store_code,
+      "StorageLocation": data.data.recevive_stock_point_code,
+      "GoodsMovementType": "101",
+      "PurchaseOrder": data.data.ref_advice_id,
+      "PurchaseOrderItem": "10",
+      "GoodsMovementRefDocType": "B",
+      "GoodsMovementReasonCode": "101",
+      "EntryUnit": "EA",
+      "QuantityInEntryUnit": item.receive_quantity,
+      "IsCompletelyDelivered": true,
+      "to_SerialNumbers": [
+        {
+          "SerialNumber": ""
+        },
+        {
+          "SerialNumber": ""
+        }
+      ]
+      }))
+  ]
+}
+%>
+
+
+
+<%- JSON.stringify(result) %>

@@ -1,0 +1,176 @@
+<% 
+let store_details = data.data.store_details;
+let customer_billing = data.data.customer_details.billing_details;
+let customer_shiping = data.data.customer_details.shipping_details;
+let ItemList = data.data?.invoice_items ?data.data?.invoice_items : data.data?.goods_transfer_items? data.data.goods_transfer_items:[]
+
+
+let srno = 1; 
+let itemData = []; 
+
+
+ItemList.forEach(item_list => { 
+    let itemDetails = {}; 
+    itemDetails['SlNo'] = srno;
+    itemDetails['PrdDesc'] = item_list?.item_name ?item_list.item_name:'';
+    itemDetails['IsServc'] = "N";
+    itemDetails['HsnCd'] =item_list?.hsn_code ? item_list.hsn_code :'0110'  //item_list.hsn_code == 0  || item_list.hsn_code.trim() ? '0110' : item_list.hsn_code;
+    itemDetails['Barcde'] = item_list.tax_details.barcode;
+    itemDetails['Qty'] = item_list.quantity;
+    itemDetails['FreeQty'] = null;
+    itemDetails['Unit'] = 'PCS';
+    itemDetails['UnitPrice'] = item_list?.csp ?item_list.csp:'';
+    itemDetails['TotAmt'] = parseFloat(item_list.taxable_amount) + parseFloat(item_list.discount_amount);
+    itemDetails['Discount'] = item_list.discount_amount;
+    itemDetails['PreTaxVal'] = null;
+    itemDetails['AssAmt'] = parseFloat(item_list.taxable_amount);
+    itemDetails['GstRt'] = item_list.tax_details.IGST === undefined
+    ? parseFloat(item_list.tax_details.CGST) + parseFloat(item_list.tax_details.SGST)
+    : item_list.tax_details.IGST;
+    itemDetails['IgstAmt'] = item_list.tax_details.IGST_amt || 0;
+    itemDetails['CgstAmt'] = item_list.tax_details.CGST_amt || 0;
+    itemDetails['SgstAmt'] = item_list.tax_details.SGST_amt || 0;
+    itemDetails['CesRt'] = item_list.tax_details.CESS || 0;
+    itemDetails['CesAmt'] = item_list.tax_details.CESS_amt || 0;
+    itemDetails['CesNonAdvlAmt'] = null;
+    itemDetails['StateCesRt'] = null;
+    itemDetails['StateCesAmt'] = null;
+    itemDetails['StateCesNonAdvlAmt'] = null;
+    itemDetails['OthChrg'] = null;
+    itemDetails['TotItemVal'] = item_list.total;
+    itemDetails['OrdLineRef'] = null;
+    itemDetails['OrgCntry'] = null;
+    itemDetails['PrdSlNo'] = null;
+    itemDetails['BchDtls'] = {};
+    itemDetails['AttribDtls'] = [];
+    itemData.push(itemDetails); 
+    srno++;
+}); 
+
+
+
+    let result ={
+        "Version": "1.1",
+        "TranDtls": {
+        "TaxSch": "GST",
+        "SupTyp": data.data?.trade_type ?data.data.trade_type:'B2B',
+        "RegRev": "N",
+        "EcmGstin": null,
+        "IgstOnIntra": "N"
+        },
+        "DocDtls": {
+        "Typ": 'INV',//data.data.invoice_type.toUpperCase() == 'SALES' ? 'INV' : 'CRN', //Example: INV , invoice_type
+        "No": data.data.doc_no,
+        "Dt": moment(data.data.created_at).format('DD/MM/YYYY')
+        },
+        "SellerDtls": {
+        "Gstin": store_details.gst,
+        "LglNm": store_details.name,
+        "TrdNm": null,
+        "Addr1": store_details?.address1 ? store_details.address1.substring(0, 90):'',
+        "Addr2": store_details?.address2 ? store_details.address2:'',
+        "Loc": store_details?.location?store_details?.location.substring(0, 40):'',
+        "Pin": store_details.pincode,
+        "Stcd": store_details.state,
+        "Ph": store_details.phone,
+        "Em": store_details.email
+        },
+        "BuyerDtls": {
+        "Gstin": customer_billing.gstIdentificationNumber,
+        "LglNm": customer_billing.first_name + customer_billing.last_name,
+        "TrdNm": null,
+        "Pos": customer_billing.gstIdentificationNumber !=null && customer_billing?.gstIdentificationNumber ?customer_billing.gstIdentificationNumber.substring(0, 2):'eInvoice',
+        "Addr1": customer_billing.addressDetails.addressLine1 && customer_billing.addressDetails.addressLine1.trim()?customer_billing.addressDetails.addressLine1.substring(0, 90):'',
+        "Addr2": customer_billing.addressDetails?.addressLine2 && customer_billing.addressDetails.addressLine2.trim() ? customer_billing.addressDetails.addressLine2.substring(0, 90) : null,
+        "Loc": customer_billing.addressDetails.city && customer_billing.addressDetails.city.trim()? customer_billing.addressDetails.city.substring(0, 90):'',
+        "Pin": customer_billing.addressDetails.postalCode && customer_billing.addressDetails.postalCode? customer_billing.addressDetails.postalCode:'',
+        "Stcd": customer_billing.addressDetails.state && customer_billing.addressDetails.state.trim()? customer_billing.addressDetails.state:'',
+        "Ph": customer_billing.mobile_no && customer_billing.mobile_no.trim()? customer_billing.mobile_no:'',
+        "Em": customer_billing.email && customer_billing.email.trim()?customer_billing.email:''
+        },
+        "DispDtls": {
+        "Nm": null,
+        "Addr1": null,
+        "Addr2": null,
+        "Loc": null,
+        "Pin": null,
+        "Stcd": null
+        },
+        "ShipDtls": {
+        "Gstin": null,
+        "LglNm": null,
+        "TrdNm": null,
+        "Addr1": null,
+        "Addr2": null,
+        "Loc": null,
+        "Pin": null,
+        "Stcd": null
+        },
+        "ItemList": itemData,
+        "ValDtls": {
+            "AssVal": data.data.taxable_amount,
+            "CgstVal": null,
+            "SgstVal": null,
+            "IgstVal": null,
+            "CesVal": null,
+            "StCesVal": null,
+            "Discount": null,
+            "OthChrg": null,
+            "RndOffAmt": null,
+            "TotInvVal": data.data.net_amount,
+            "TotInvValFc": null
+        },
+        "PayDtls": {
+            "Nm": null,
+            "AccDet": null,
+            "Mode": null,
+            "FinInsBr": null,
+            "PayTerm": null,
+            "PayInstr": null,
+            "CrTrn": null,
+            "DirDr": null,
+            "CrDay": null,
+            "PaidAmt": null,
+            "PaymtDue": null
+        },
+        "RefDtls": {
+            "InvRm": null,
+            "DocPerdDtls": {
+                "InvStDt": moment(data.data.created_at).format('DD/MM/YYYY'),
+                "InvEndDt": moment(data.data.created_at).format('DD/MM/YYYY')
+            },
+            "PrecDocDtls": [{
+                "InvNo": data.data.doc_id,
+                "InvDt": moment(data.data.created_at).format('DD/MM/YYYY'),
+                "OthRefNo": null
+            }],
+            "ContrDtls": [{
+                "RecAdvRefr": null,
+                "RecAdvDt": null,
+                "TendRefr": null,
+                "ContrRefr": null,
+                "ExtRefr": null,
+                "ProjRefr": null,
+                "PORefr": null,
+                "PORefDt": null
+            }]
+        },
+        "AddlDocDtls": [{
+            "Url": null,
+            "Docs": null,
+            "Info": null
+        }],
+        "ExpDtls": {
+            "ShipBNo": null,
+            "ShipBDt": null,
+            "Port": null,
+            "RefClm": null,
+            "ForCur": null,
+            "CntCode": null,
+            "ExpDuty": null
+        },
+        "EwbDtls": {}
+    }
+%>
+
+<%- JSON.stringify(result, null, 2) %>

@@ -1,0 +1,32 @@
+name: Update EJS Templates via API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.ejs'  # Only trigger on EJS file changes
+
+jobs:
+  update-templates:
+    runs-on: ubuntu-latest
+   
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # To be able to get changed files
+     
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+         
+      - name: Install dependencies
+        run: npm install axios
+     
+      - name: Run template update script
+        run: node scripts/update-changed-templates.js
+        env:
+          # Optional: Add secrets for API authentication if needed globally
+          API_KEY: ${{ secrets.API_KEY }}

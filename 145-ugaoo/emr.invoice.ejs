@@ -1,0 +1,386 @@
+<%
+
+const isReturn = data.data.transaction_type === 'return';
+const isSales = data.data.transaction_type === 'sales';
+let accrual = 1;
+
+let referenceno = '';
+
+let AllowPointAccrual = data.data.discount_details.find(el => el.discount_type === "CPN" || el.discount_type === "LOY");
+
+if (AllowPointAccrual) {
+    let discountDetails = AllowPointAccrual.discount_details;
+
+    // Parse discount details if it's a JSON string
+    if (typeof discountDetails === "string" && discountDetails) {
+        discountDetails = JSON.parse(discountDetails);
+    } else if (!discountDetails) {
+        discountDetails = {};
+    }
+
+    // Assign accrual based on different key naming variations
+    accrual = discountDetails.Allow_Point_Accrual ?? discountDetails.ALLOW_POINT_ACCRUAL ?? discountDetails.allow_point_accrual ?? 1;
+    referenceno = AllowPointAccrual.referenceno || '';
+
+    // Handle case when AllowPointAccrual is an array
+    if (Array.isArray(AllowPointAccrual)) { 
+        AllowPointAccrual = AllowPointAccrual.find(el => el.discount_type === "LOY") || AllowPointAccrual;
+        
+        discountDetails = AllowPointAccrual.discount_details;
+        if (typeof discountDetails === "string" && discountDetails) {
+            discountDetails = JSON.parse(discountDetails);
+        }
+
+        accrual = discountDetails.Allow_Point_Accrual ?? discountDetails.ALLOW_POINT_ACCRUAL ?? discountDetails.allow_point_accrual ?? 1;
+        referenceno = AllowPointAccrual.referenceno || '';
+    }
+}
+%>
+<%
+let billItemDiscount = 0;
+let DiscountAmt = 0;
+
+data.data.invoice_items.forEach(invoiceItem => {
+    invoiceItem.item_discount_details.forEach(discountDetails => {
+        const discountAmount = parseFloat(discountDetails.discount_amount) || 0;
+
+        // Calculate bill item discount (ILMD only)
+        if (discountDetails.discount_type === 'ILMD') {
+            billItemDiscount += discountAmount;
+        }
+
+        // Calculate total discount amount for specific types
+        if (['BLMD', 'CPN', 'BLP', 'ILMD', 'LOY'].includes(discountDetails.discount_type)) {
+            DiscountAmt += discountAmount;
+        }
+    });
+});
+%>
+
+<%
+let result = {
+    billingDetails: {
+        POSBILL: [],
+        POSBillItems:[],
+        POSBillMOP:[],
+        POSCustomer:[],
+    },
+    membershipId: '',
+    ISDCode: "91",
+    IsEmployee :  0,
+    BillEvent :  "NEW",
+    event :  "addTransaction",
+    vendorId :  "",
+    providerCode :  [],
+    vendorCode :  "ZWING_001"
+}
+let posBillObj = {
+    BillId: data.data.invoice_id,
+    BillNo: data.data.doc_id.toString(),
+    BillDate: moment.utc(data.data.created_at).local().format().split('+')[0],
+    TerminalId : data.data?.terminal_id  ? data.data.terminal_id : '',
+    customerId: "1438",
+    cardNo:null,
+    StockPointId: data.data.stock_point_code,
+    cardNo:null,
+    DiscountId:null,
+    MRPAmt: isSales  ? data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.mrp), 0):data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.mrp), 0) * -1,
+    BasicAmt: isSales  ? data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.csp), 0):data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.csp), 0) * -1,
+    PromoAmt: data.data.invoice_items.reduce((sum, itemDetails) => {
+            return sum + itemDetails.item_discount_details.reduce((discSum, discnt) => {
+                return discnt.discount_type == 'ILP' ? discSum + discnt.discount_amount : discSum;
+            }, 0);
+        }, 0),
+    SaleAmt: isSales  ? data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.csp), 0) : 0,
+    
+    ReturnAmt: isSales  ? data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.csp), 0) : data.data.invoice_items.reduce((sum, mrpItem) => sum + parseFloat(mrpItem.csp), 0) * -1,
+    
+    GrossAmt: isReturn != 'return' ? data.data.subtotal : data.data.subtotal * -1,
+
+    LPDiscountAmt: data.data.discount_details.reduce((sum, discountDetails) => 
+            discountDetails.discount_type === 'LOY' ? sum + parseFloat(discountDetails.discount_amount) : sum, 0),
+    
+    discountBenefitId:null,
+
+    pointBenefit:null,
+
+    DiscountAmt: data.data.discount_details.reduce((sum, discountDetails) => discountDetails.discount_type != 'ILP' ? sum + parseFloat(discountDetails.discount_amount) : sum, 0),
+    
+    NetAmt: isSales  ? data.data.net_amount : data.data.net_amount * -1,
+    
+    NetPayable: isSales  ? data.data.total : data.total * -1,
+        
+    ChargeAmt:0,
+
+    RoundOff: data.data.round_off,
+
+    ExTaxAmt:0,
+
+    PromoCode: null,
+
+    PromoBenefit: null,
+
+    MDiscountAmt: data.data.discount_details.reduce((sum, discountDetails) => {
+            return discountDetails.discount_type == 'BLMD' || discountDetails.discount_type == 'BLP' || discountDetails.discount_type == 'CPN' ? sum + parseFloat(discountDetails.discount_amount) : sum;
+        }, 0),
+
+    EMRREDCouponRef:null,
+
+    AllowPointAccrual:accrual,
+
+    BillGUID: data.data.ref_order_id,
+        
+    CouponCode: data.data.discount_details.find(el => el.discount_type === "CPN")?.discount_details?.couponcode || '',
+        
+    Remarks: data.data.remark,
+
+    CashierName: data.data.cashier_details?.firstName || '',
+
+    CustomerGSTIN: data.data.customer_details.billing_details.gstIdentificationNumber,
+
+    CustomerGSTStateCode: data.data.customer_details.billing_details.tax_registration_state_code,
+
+    GSTDocNumber: data.data.doc_id,
+
+    PromoNo: data.data.discount_details.find(el => el.discount_type === "BLP")?.discount_code || '',
+
+    PromoName: data.data.discount_details.find(el => el.discount_type === "BLP")?.discount_description || '',
+
+    CreatedOn: moment.utc(data.data.created_at).local().format().split('+')[0],
+
+    CreatedBy: data.data.cashier_details?.firstName || '',
+
+    MDiscountDesc:null,
+
+    LPPointsEarned:0,
+    UDFSTRING1: "",
+    UDFSTRING2: "",
+    UDFSTRING3: "",
+    UDFSTRING4: "",
+    UDFSTRING5: "",
+    POSMode: "P",
+    LPRedeemedPoints: null,
+    TpCRMCustomerName: "",
+    TpCRMCustomerMobile: null,
+    TpCRMRefNumber: "",
+    TpCRMRedType: "",
+    TpCRMRedFactor: null,
+    TpCRMDiscValidationCode: "",
+    TpCRMCouponType: "",
+    TpCRMCouponCode: "",
+    UDFSTRING6: "",
+    UDFSTRING7: "",
+    UDFSTRING8: "",
+    UDFSTRING9: "",
+    UDFSTRING10: "",
+    UDFNUM01: null,
+    UDFNUM02: null,
+    UDFNUM03: null,
+    UDFNUM04: null,
+    UDFNUM05: null,
+    UDFDATE01: null,
+    UDFDATE02: null,
+    UDFDATE03: null,
+    UDFDATE04: null,
+    UDFDATE05: null,
+    TradeGroupID: "",
+    OwnerGSTINNo: data.data.store_details.gst,
+    OwnerGSTINStateCode: data.data.store_details.state_code,
+    EMRREDPointRef: null,
+    DiscountAmt:DiscountAmt,
+    IDiscountAmt:billItemDiscount,
+}
+result.billingDetails.POSBILL.push(posBillObj)
+%>
+
+
+<%
+data.data.invoice_items.forEach(invoiceItem => {
+    const { intgInvoiceDetId, sku_code, barcode, item_name, quantity, mrp, rsp, csp, gross_amount, net_amount, hsn_code, remarks, tax_details, item_discount_details, item_details } = invoiceItem;
+    const posBillItems = {};
+
+    posBillItems['POSBillItemId'] = intgInvoiceDetId;
+    posBillItems['ItemId'] = sku_code;
+    posBillItems['BarCode'] = barcode;
+    posBillItems['ItemName'] = item_name || '';
+    posBillItems['Qty'] = isSales  ? quantity : -quantity;
+
+    posBillItems['RtQty'] = !isSales ? quantity : 0; 
+
+    let division = invoiceItem.item_details.categories.find(el => el.level == 1)
+    posBillItems['Division'] = division  ? division.category_name : ''; 
+
+    let section = invoiceItem.item_details.categories.find(el => el.level == 2)
+    posBillItems['Section'] = section ? section.category_name : ''; 
+
+    let department = invoiceItem.item_details.categories.find(el => el.level == 3)
+    posBillItems['Department'] = department  ? department.category_name : ''; 
+    
+    let article = invoiceItem.item_details.categories.find(el => el.level == 4)
+    posBillItems['Article'] = article  ? article.category_name : ''; 
+
+
+    posBillItems['MRP'] = mrp;
+    posBillItems['RSP'] = rsp;
+    posBillItems['ESP'] = csp;
+    posBillItems['SalePrice'] = gross_amount;
+
+    posBillItems['IGrossAmt'] = isSales ? invoiceItem.gross_amount : invoiceItem.gross_amount * -1;//invoice_items.gross_amount
+
+    let MRPAmount = parseFloat(quantity) * parseFloat(mrp);
+    posBillItems['MRPAmt'] = isSales  ? MRPAmount : -MRPAmount;
+
+    let BasicAmount = parseFloat(quantity) * parseFloat(csp);
+    posBillItems['BasicAmt'] = isSales  ? BasicAmount : -BasicAmount;
+
+    let PromoAmt = item_discount_details.reduce((sum, discount) => {
+        return discount.discount_type === 'ILP' ? sum + parseFloat(discount.discount_amount) : sum;
+    }, 0);
+    posBillItems['PromoAmt'] = PromoAmt;
+
+    posBillItems['GrossAmt'] = isReturn  ? gross_amount * -1 : gross_amount;
+
+    const itemDiscount = item_discount_details.reduce((sum, discount) => {
+        return discount.discount_type === 'ILMD' ? sum + parseFloat(discount.discount_amount) : sum;
+    }, 0);
+    posBillItems['IDiscountAmt'] = itemDiscount;
+
+    const MDiscountAmt = item_discount_details.reduce((sum, discount) => {
+        return ['BLMD', 'CPN', 'BLP'].includes(discount.discount_type) ? sum + parseFloat(discount.discount_amount) : sum;
+    }, 0);
+    posBillItems['MDiscountAmt'] = MDiscountAmt;
+
+    const totalDiscountAmt = item_discount_details.reduce((sum, discount) => {
+        return ['BLMD', 'CPN', 'BLP', 'ILMD', 'LOY'].includes(discount.discount_type) ? sum + parseFloat(discount.discount_amount) : sum;
+    }, 0);
+    posBillItems['DiscountAmt'] = parseFloat(totalDiscountAmt.toFixed(2));
+
+    posBillItems['NetAmt'] = isSales  ? net_amount : -net_amount;
+    const taxRate = Object.keys(tax_details.tax_preset).reduce((sum, key) => sum + parseFloat(tax_details.tax_preset[key] || 0), 0);
+
+    posBillItems['TaxPercent'] = taxRate;
+    posBillItems['TaxAmt'] = isSales  ? parseFloat(invoiceItem.tax_amount) : parseFloat(invoiceItem.tax_amount) * -1;
+    
+    posBillItems['TaxableAmt'] = isSales  ? parseFloat(invoiceItem.taxable_amount) : parseFloat(invoiceItem.taxable_amount )* -1;
+
+    posBillItems['HSNCode'] = hsn_code;
+    posBillItems['Remarks'] = remarks;
+
+    posBillItems['IGSTRate'] = tax_details.IGST || 0;
+    posBillItems['CGSTRate'] = tax_details.CGST || 0;
+    posBillItems['SGSTRate'] = tax_details.SGST || 0;
+    posBillItems['CESSRate'] = tax_details.CESS || 0;
+
+    const PromoCode = item_discount_details.find(el => el.discount_type === 'ILP');
+    posBillItems['PromoCode'] = PromoCode ? PromoCode.discount_type : '';
+    posBillItems['PromoDiscountFactor'] = PromoCode ? PromoCode.discount_factor : '';
+    posBillItems['RefPOSBillItemId'] = null; 
+    posBillItems['LPDiscountBenefit'] = null; 
+    posBillItems['LPPointBenefit'] = null;
+
+    posBillItems['MGrossAmt'] = (invoiceItem.quantity * invoiceItem.csp) - PromoAmt;
+
+    posBillItems['MGrossAmt'] = isSales ? posBillItems['MGrossAmt'] : posBillItems['MGrossAmt'] * -1;
+
+    posBillItems['RefBillNo'] = !isSales ? data.data.ref_doc_id : '';
+
+    let LPDiscountAmt = invoiceItem.item_discount_details.reduce((sum, discountDetails) => {
+                    if (discountDetails.discount_type == 'LOY')
+                        return sum + parseFloat(discountDetails.discount_amount);
+                    else
+                        return sum + 0;
+
+                }, 0);
+
+                
+    posBillItems['LPDiscountAmt'] = LPDiscountAmt; 
+
+    for (let i = 1; i <= 6; i++) {
+        const cat = item_details.common_attributes.find(attr => attr.attribute_name === `CNAME${i}`);
+        posBillItems[`Cat${i}`] = cat ? cat.attribute_value : '';
+    }
+    
+
+    result.billingDetails.POSBillItems.push(posBillItems);
+});
+%>
+
+<%
+data.data.mop_details.forEach((mop, index) => {
+   
+    
+    const posBillMOP = {
+        POSBillMOPId: mop.mop_id,
+        MOPId: mop.mop_id,
+        MOPName: mop.name,
+        MOPType: mop.code,
+        CNRType: "NA",
+        CurrencyId: "1",
+        BaseTender: mop.cash_collected * (isReturn ? -1 : 1),
+        BaseBalance: mop.cash_return || 0,
+        BaseAmt: mop.mop_amount * (isSales ? 1 : -1),
+        Tender: 400,
+        CCNo: "4502",
+        MOPDesc: mop.name,
+        MOPStlmDesc: '',
+        MOPShortCode: mop.code,
+        DisplayOrder: index,
+        ForexRate: null,
+        ForexTender: null,
+        ForexAmt: null,
+        ForexBalance: null,
+        POSBillCNId: null,
+        CreditNoteNumber: null,
+        POSBillDNId: null,
+        TPEDC: 0,
+        TpEDCBankName: null,
+        TpEDCCardType: null,
+        TpBillRefNumber: null,
+        IsDenoApplicable: null,
+        WalletRefNumber: null,
+        WLTMobile: null,
+        TpEDCResponse: null
+    };
+    
+    result.billingDetails.POSBillMOP.push(posBillMOP);
+});
+%>
+
+<%
+const billingDetails = data.data.customer_details.billing_details;
+const addressDetails = billingDetails.addressDetails;
+
+const posCustomer = {
+    firstfame: billingDetails.first_name,
+    lastname: billingDetails.last_name,
+    dateofbirth: billingDetails.dob,
+    dateofanniversary: billingDetails.dateOfAnniversary,
+    pincode: addressDetails.postalCode,
+    emailid: billingDetails.email,
+    mobile: billingDetails.mobile_no,
+    ISDCode: billingDetails.country_code.replace("+", ""),
+    gender: billingDetails.gender,
+    isEmployee: 0,
+    membershipcardnumber: null,
+    profession: "",
+    MName: "",
+    MemberSince: null,
+    SpouseName: billingDetails.spouseName,
+    Salutation: "",
+    Remarks: billingDetails.remarks,
+    Receivemessage: "1",
+    PrefCommunicationMode: "S",
+    LPCardNo: "",
+    PanNo: billingDetails.panNumber,
+    Address1: addressDetails.addressLine1,
+    Address2: addressDetails.addressLine2,
+    Address3: addressDetails.addressLine3,
+    City: "",
+    State: "",
+    Country: addressDetails.country
+};
+result.billingDetails.POSCustomer.push(posCustomer);
+%>
+
+
+<%- JSON.stringify(result, null, 2) %>

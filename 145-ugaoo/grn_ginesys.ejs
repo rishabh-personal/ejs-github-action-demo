@@ -1,0 +1,115 @@
+staging END point = /2024-01/POS/GRC
+
+<% 
+let grcItems = [];
+data.data.grn_items.forEach((item) => {
+grcItems.push({
+        packetId: item.packet_id,
+        adviceDetailId: item.ref_advice_list_id,
+        itemId: item.ref_sku_code,
+        receiveQuantity: parseInt(item.receive_quantity),
+        damageQuantity: parseInt(item.damage_quantity),
+        shortExcessQuantity:parseInt(item.short_excess_quantity*-1),
+        batchSerialCode:item?.batch_serial_code?item?.batch_serial_code:null,
+        itemRemarks: item.remarks
+})
+})
+let result={
+    transactionSiteCode: data.data.ref_store_code, 
+    grcNo: data.data.doc_id,
+    grcDate: data.data.created_at,
+    replenishmentSourceCode: !data.data.source_site_code ? null :data.data.source_site_code.toString() ,
+    replenishmentSourceAdviceId: !data.data.ref_advice_id  ?null : data.data.ref_advice_id.toString() ,
+    receiveStockpointId: data.data.recevive_stock_point_code, 
+    damageStockpointId: 4, 
+    remarks: !data.data.remarks  ? null :data.data.remarks,
+    grcItems:grcItems
+    
+
+}
+%>
+
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Actual Data Mapping from Your Code:
+
+{
+// Required Fields with exact source keys
+"transactionSiteCode": data.data.ref_store_code,
+"grcNo": data.data.doc_id,
+"grcDate": data.data.created_at,
+"receiveStockpointId": data.data.recevive_stock_point_code,
+
+// Optional Fields with exact source keys
+"replenishmentSourceCode": data.data.source_site_code?.toString() || null,
+"replenishmentSourceAdviceId": data.data.ref_advice_id?.toString() || null,
+"damageStockpointId": 4,
+"remarks": data.data.remarks || null,
+
+// GRC Items array with exact source keys
+"grcItems": data.data.grn_items.map(item => ({
+// Required Item Fields
+"packetId": item.packet_id,
+"adviceDetailId": item.ref_advice_list_id,
+"itemId": item.ref_sku_code,
+"receiveQuantity": parseInt(item.receive_quantity),
+"damageQuantity": parseInt(item.damage_quantity),
+"shortExcessQuantity": parseInt(item.short_excess_quantity*-1),
+
+// Optional Item Fields
+"batchSerialCode": item?.batch_serial_code || null,
+"itemRemarks": item.remarks
+}))
+}
+
+
+
+
+
+### Required Key Mapping
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.ref_store_code" -> "transactionSiteCode"
+"data.data.doc_id" -> "grcNo"
+"data.data.created_at" -> "grcDate"
+"data.data.recevive_stock_point_code" -> "receiveStockpointId"
+}
+
+// ITEM LEVEL REQUIRED (grcItems array)
+{
+"item.packet_id" -> "packetId"
+"item.ref_advice_list_id" -> "adviceDetailId"
+"item.ref_sku_code" -> "itemId"
+"item.receive_quantity" -> "receiveQuantity"
+"item.damage_quantity" -> "damageQuantity"
+"item.short_excess_quantity" -> "shortExcessQuantity"
+}
+
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.source_site_code" -> "replenishmentSourceCode"
+"data.data.ref_advice_id" -> "replenishmentSourceAdviceId"
+"4" -> "damageStockpointId" // Fixed value
+"data.data.remarks" -> "remarks"
+}
+
+// ITEM LEVEL OPTIONAL
+{
+"item.batch_serial_code" -> "batchSerialCode"
+"item.remarks" -> "itemRemarks"
+}

@@ -1,0 +1,86 @@
+<% 
+
+let store_active_date = new Date(data.data.store_active_date);
+store_active_date.setDate(store_active_date.getDate() - 1);
+let result = {
+  siteId: data.data.ref_store_code, 
+  openingDate: store_active_date, 
+  stockpointId: data.data.ref_stock_point_code, 
+  openingStockItems: [
+  data.data.opening_stock_items.map(item=>({
+    itemId: item.ref_sku_code, 
+    quantity: item.quantity,
+    rate: parseFloat(item.supply_price).toFixed(3), 
+  }))
+  ],
+};
+
+%>
+
+
+<%- JSON.stringify(result)  %>
+
+
+
+
+
+### Required Keys and Values
+```javascript
+{
+// Root Level Required
+"siteId": "ref_store_code", // from data.data.ref_store_code
+"openingDate": "store_active_date", // from data.data.store_active_date (minus 1 day)
+"stockpointId": "ref_stock_point_code", // from data.data.ref_stock_point_code
+
+// Required Item Level
+"openingStockItems": [
+{
+"itemId": "ref_sku_code", // from item.ref_sku_code
+"quantity": "quantity", // from item.quantity
+"rate": "supply_price" // from item.supply_price (as float, 3 decimals)
+}
+]
+}
+
+
+Example Data Types:
+siteId: String
+openingDate: Date (ISO format)
+stockpointId: String
+itemId: String
+quantity: Number
+rate: Number (float with 3 decimal places)
+
+
+
+
+
+### Required Keys List
+
+// Root Level Required Keys
+siteId = data.data.ref_store_code
+openingDate = data.data.store_active_date // (minus 1 day)
+stockpointId = data.data.ref_stock_point_code
+
+// Item Level Required Keys
+itemId = item.ref_sku_code
+quantity = item.quantity
+rate = item.supply_price // (converted to float, 3 decimals)
+
+
+
+
+
+### Source to Target Mapping
+
+{
+// Root Level Source -> Target
+"ref_store_code" -> "siteId"
+"store_active_date" -> "openingDate"
+"ref_stock_point_code" -> "stockpointId"
+
+// Item Level Source -> Target
+"ref_sku_code" -> "itemId"
+"quantity" -> "quantity"
+"supply_price" -> "rate"
+}

@@ -1,0 +1,78 @@
+<%
+
+const dueDateUTC = new Date(data.data.due_date); 
+const stillUtc = new Date(dueDateUTC.toISOString()); 
+let result={
+    date:data.data.created_at,
+    customerId:null,
+    channelCode:null,
+    documentDate:data.data.created_at,
+    dueDate:stillUtc,
+    remarks:data.data.remark,
+    orderNo:data.data.doc_id,
+    destinationSite:data.data.ref_store_code,
+    ownerSite:100001,
+    reservationRequired:'N',
+    partialReservation:'N',
+    intgOrderId:data.data.ref_doc_id.toString(),
+    itemDetails: data.data.invoice_items.map(items => ({
+        itemCode: items.ref_sku_code,
+        qty: items.quantity,
+        rate: null,
+        remarks: items.remarks,
+        intgOrderDetailId: items.id.toString(),
+        channelB2COrderDetId: null,
+        
+    }))
+}
+%>
+
+
+<%- JSON.stringify(result) %>
+
+
+
+
+
+### Required Key Mapping
+
+// ROOT LEVEL REQUIRED
+{
+"source" -> "target"
+
+"data.data.created_at" -> "date"
+"data.data.created_at" -> "documentDate"
+"data.data.due_date" -> "dueDate" // Convert UTC
+"data.data.doc_id" -> "orderNo"
+"data.data.ref_store_code" -> "destinationSite"
+"100001" -> "ownerSite" // Fixed value
+"N" -> "reservationRequired" // Fixed value
+"N" -> "partialReservation" // Fixed value
+"data.data.ref_doc_id.toString()" -> "intgOrderId"
+}
+
+// ITEM DETAILS REQUIRED (itemDetails array)
+{
+"items.ref_sku_code" -> "itemCode"
+"items.quantity" -> "qty"
+"items.id.toString()" -> "intgOrderDetailId"
+}
+
+
+
+
+### Optional Key Mapping
+
+// ROOT LEVEL OPTIONAL
+{
+"data.data.customer_id" -> "customerId" // Default: null
+"data.data.channel_code" -> "channelCode" // Default: null
+"data.data.remark" -> "remarks" // Default: null
+}
+
+// ITEM DETAILS OPTIONAL
+{
+"null" -> "rate" // Default: null
+"items.remarks" -> "remarks" // Default: null
+"null" -> "channelB2COrderDetId" // Default: null
+}
