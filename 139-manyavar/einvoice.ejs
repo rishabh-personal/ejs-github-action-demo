@@ -13,7 +13,7 @@ ItemList.forEach(item_list => {
     let itemDetails = {}; 
     itemDetails['SlNo'] = srno;
     itemDetails['PrdDesc'] = item_list?.item_name ?item_list.item_name:'';
-    itemDetails['IsServc'] = "N";
+    itemDetails['IsServc'] = "chaning file one";
     itemDetails['HsnCd'] =item_list?.hsn_code ? item_list.hsn_code :'0110'  //item_list.hsn_code == 0  || item_list.hsn_code.trim() ? '0110' : item_list.hsn_code;
     itemDetails['Barcde'] = item_list.tax_details.barcode;
     itemDetails['Qty'] = item_list.quantity;
